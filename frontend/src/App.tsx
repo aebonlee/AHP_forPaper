@@ -53,16 +53,29 @@ function App() {
       <p className="text-blue-700 text-sm mb-3">
         이것은 GitHub Pages에서 호스팅되는 데모 버전입니다. 백엔드 기능은 시뮬레이션됩니다.
       </p>
-      <div className="text-blue-600 text-xs">
-        <strong>완전한 버전 확인:</strong> 
-        <a 
-          href="https://github.com/aebonlee/AHP_forPaper" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="ml-2 underline"
-        >
-          GitHub 저장소
-        </a>
+      <div className="text-blue-600 text-xs space-y-1">
+        <div>
+          <strong>완전한 백엔드 API:</strong> 
+          <a 
+            href="https://ahp-forpaper.onrender.com/api/health" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="ml-2 underline"
+          >
+            https://ahp-forpaper.onrender.com
+          </a>
+        </div>
+        <div>
+          <strong>소스코드:</strong> 
+          <a 
+            href="https://github.com/aebonlee/AHP_forPaper" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="ml-2 underline"
+          >
+            GitHub 저장소
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -263,9 +276,20 @@ function App() {
               <p className="text-yellow-700 text-sm mb-2">
                 이것은 GitHub Pages 데모 버전입니다. 아무 이메일과 비밀번호로 로그인하세요.
               </p>
-              <p className="text-yellow-600 text-xs">
+              <p className="text-yellow-600 text-xs mb-2">
                 예: demo@example.com / 123456
               </p>
+              <div className="text-yellow-600 text-xs border-t pt-2 mt-2">
+                <div className="font-medium">완전한 백엔드 API:</div>
+                <a 
+                  href="https://ahp-forpaper.onrender.com/api/health" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="underline"
+                >
+                  https://ahp-forpaper.onrender.com
+                </a>
+              </div>
             </div>
           </div>
         </div>
