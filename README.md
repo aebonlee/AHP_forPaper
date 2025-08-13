@@ -71,15 +71,36 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### Render.com 배포
-1. GitHub 저장소를 Render에 연결
-2. `render.yaml` 파일이 자동으로 배포 설정을 처리
-3. 환경 변수 설정:
-   - `DATABASE_URL`: PostgreSQL 연결 문자열
-   - `JWT_SECRET`: JWT 암호화 키
-   - `CORS_ORIGIN`: 프론트엔드 URL
+### Render.com 자동 배포 🚀
+1. **GitHub 저장소를 Render에 연결**:
+   - Render 대시보드에서 "New +" 클릭
+   - "Blueprint" 선택
+   - GitHub 저장소 `aebonlee/AHP_forPaper` 연결
 
-## 서비스 접근
+2. **자동 배포 설정**:
+   - `render.yaml` 파일이 다음을 자동 구성:
+     - PostgreSQL 데이터베이스 생성
+     - 백엔드 서비스 (Node.js/Express)
+     - 프론트엔드 서비스 (React 정적 사이트)
+   - 환경 변수가 자동으로 설정됨
+
+3. **배포 완료 후 접근**:
+   - 백엔드 API: `https://ahp-backend.onrender.com`
+   - 프론트엔드: `https://ahp-frontend-render.onrender.com`
+   - 데이터베이스: 자동 생성된 PostgreSQL 인스턴스
+
+### 배포 상태 확인
+- **Health Check**: `https://ahp-backend.onrender.com/api/health`
+- **API 테스트**: `https://ahp-backend.onrender.com/api/auth/profile`
+
+## 서비스 접근 URL
+
+### 🌐 라이브 서비스
+- **GitHub Pages 데모**: https://aebonlee.github.io/AHP_forPaper/
+- **Render 백엔드**: https://ahp-backend.onrender.com (배포 후)
+- **Render 프론트엔드**: https://ahp-frontend-render.onrender.com (배포 후)
+
+### 🏠 로컬 개발
 - **프론트엔드**: http://localhost:3000
 - **백엔드 API**: http://localhost:5000
 - **데이터베이스**: postgresql://ahp_user:ahp_password@localhost:5432/ahp_db

@@ -3,13 +3,15 @@ services:
     name: ahp-backend
     env: node
     plan: starter
-    buildCommand: cd backend && npm install && npm run build
+    region: oregon
+    buildCommand: cd backend && npm ci && npm run build
     startCommand: cd backend && npm start
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 5000
+        value: 10000
       - key: DATABASE_URL
         fromDatabase:
           name: ahp-postgres
@@ -17,20 +19,23 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: CORS_ORIGIN
-        sync: false
+        value: https://aebonlee.github.io
 
   - type: web
-    name: ahp-frontend
+    name: ahp-frontend-render
     env: static
     plan: starter
-    buildCommand: cd frontend && npm install && npm run build
+    region: oregon
+    buildCommand: cd frontend && npm ci && REACT_APP_API_URL=https://ahp-backend.onrender.com npm run build
     staticPublishPath: frontend/build
-    envVars:
-      - key: REACT_APP_API_URL
-        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
 
 databases:
   - name: ahp-postgres
     databaseName: ahp_db
     user: ahp_user
     plan: starter
+    region: oregon
