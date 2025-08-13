@@ -49,6 +49,55 @@ PORT=5000
 ## 데이터베이스 설정
 PostgreSQL이 설치되어 있어야 하며, 서버 실행 시 자동으로 마이그레이션이 실행됩니다.
 
+## 배포 방법
+
+### Docker 컨테이너로 배포 (권장)
+```bash
+# 전체 시스템 배포
+chmod +x deploy.sh
+./deploy.sh
+```
+
+### 수동 Docker 실행
+```bash
+# Docker Compose 빌드 및 실행
+docker-compose build
+docker-compose up -d
+
+# 로그 확인
+docker-compose logs -f
+
+# 서비스 중지
+docker-compose down
+```
+
+### Render.com 배포
+1. GitHub 저장소를 Render에 연결
+2. `render.yaml` 파일이 자동으로 배포 설정을 처리
+3. 환경 변수 설정:
+   - `DATABASE_URL`: PostgreSQL 연결 문자열
+   - `JWT_SECRET`: JWT 암호화 키
+   - `CORS_ORIGIN`: 프론트엔드 URL
+
+## 서비스 접근
+- **프론트엔드**: http://localhost:3000
+- **백엔드 API**: http://localhost:5000
+- **데이터베이스**: postgresql://ahp_user:ahp_password@localhost:5432/ahp_db
+
 ## 데모 계정
 - 이메일: admin@ahp-system.com
 - 비밀번호: password123
+
+## 개발 상태
+✅ **Phase 1 완료** - 기초 시스템 구축
+- 프로젝트 구조 초기화
+- 데이터베이스 스키마 
+- JWT 인증 시스템
+- UI 레이아웃 시스템
+
+🔄 **Phase 2 진행 예정** - 핵심 기능 구현
+- 프로젝트 CRUD 작업
+- 계층적 모델 빌더
+- 쌍대비교 인터페이스
+- AHP 계산 엔진
+- 결과 대시보드
