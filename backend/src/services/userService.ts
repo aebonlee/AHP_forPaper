@@ -32,7 +32,7 @@ export class UserService {
     return result.rows[0] || null;
   }
 
-  static async findById(id: number): Promise<User | null> {
+  static async findById(id: string): Promise<User | null> {
     const result = await query(
       'SELECT * FROM users WHERE id = $1 AND is_active = true',
       [id]
@@ -56,7 +56,7 @@ export class UserService {
     return result.rows;
   }
 
-  static async updateUser(id: number, updates: Partial<Pick<User, 'first_name' | 'last_name' | 'email' | 'is_active'>>): Promise<User> {
+  static async updateUser(id: string, updates: Partial<Pick<User, 'first_name' | 'last_name' | 'email' | 'is_active'>>): Promise<User> {
     const setClause = Object.keys(updates)
       .map((key, index) => `${key} = $${index + 2}`)
       .join(', ');
@@ -77,7 +77,7 @@ export class UserService {
     return result.rows[0];
   }
 
-  static async deleteUser(id: number): Promise<void> {
+  static async deleteUser(id: string): Promise<void> {
     const result = await query(
       'UPDATE users SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
       [id]

@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../types';
 
 export interface JWTPayload {
-  userId: number;
+  id: string;
   email: string;
   role: 'admin' | 'evaluator';
 }
@@ -22,7 +22,7 @@ export const comparePassword = async (password: string, hashedPassword: string):
 
 export const generateToken = (user: Pick<User, 'id' | 'email' | 'role'>): string => {
   const payload: JWTPayload = {
-    userId: user.id,
+    id: user.id,
     email: user.email,
     role: user.role
   };
@@ -36,7 +36,7 @@ export const verifyToken = (token: string): JWTPayload => {
 
 export const generateRefreshToken = (user: Pick<User, 'id' | 'email' | 'role'>): string => {
   const payload: JWTPayload = {
-    userId: user.id,
+    id: user.id,
     email: user.email,
     role: user.role
   };

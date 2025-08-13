@@ -85,20 +85,20 @@ docker-compose down
    - 환경 변수가 자동으로 설정됨
 
 3. **배포 완료 후 접근**:
-   - 백엔드 API: `https://ahp-backend.onrender.com`
-   - 프론트엔드: `https://ahp-frontend-render.onrender.com`
+   - 백엔드 API: `https://ahp-forpaper.onrender.com`
+   - 프론트엔드: GitHub Pages (정적 데모)
    - 데이터베이스: 자동 생성된 PostgreSQL 인스턴스
 
 ### 배포 상태 확인
-- **Health Check**: `https://ahp-backend.onrender.com/api/health`
-- **API 테스트**: `https://ahp-backend.onrender.com/api/auth/profile`
+- **Health Check**: `https://ahp-forpaper.onrender.com/api/health`
+- **API 테스트**: `https://ahp-forpaper.onrender.com/api/auth/profile`
 
 ## 서비스 접근 URL
 
 ### 🌐 라이브 서비스
 - **GitHub Pages 데모**: https://aebonlee.github.io/AHP_forPaper/
-- **Render 백엔드**: https://ahp-backend.onrender.com (배포 후)
-- **Render 프론트엔드**: https://ahp-frontend-render.onrender.com (배포 후)
+- **Render 백엔드 API**: https://ahp-forpaper.onrender.com (배포 후)
+- **완전한 시스템**: 백엔드 + GitHub Pages 데모 조합
 
 ### 🏠 로컬 개발
 - **프론트엔드**: http://localhost:3000

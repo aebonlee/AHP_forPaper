@@ -5,6 +5,11 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { runMigrations } from './database/migrate';
 import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
+import projectRoutes from './routes/projects';
+import criteriaRoutes from './routes/criteria';
+import alternativesRoutes from './routes/alternatives';
+import comparisonsRoutes from './routes/comparisons';
 
 dotenv.config();
 
@@ -56,6 +61,11 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api', userRoutes);
+app.use('/api', projectRoutes);
+app.use('/api', criteriaRoutes);
+app.use('/api', alternativesRoutes);
+app.use('/api', comparisonsRoutes);
 
 // Error handling middleware
 app.use((err: any, req: any, res: any, next: any) => {

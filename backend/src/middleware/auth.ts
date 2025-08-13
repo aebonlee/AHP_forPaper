@@ -1,6 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken, JWTPayload } from '../utils/auth';
 
+declare global {
+  namespace Express {
+    interface Request {
+      user: JWTPayload;
+    }
+  }
+}
+
 export interface AuthenticatedRequest extends Request {
   user: JWTPayload;
 }
@@ -18,7 +26,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 
   try {
     const decoded = verifyToken(token);
-    (req as AuthenticatedRequest).user = decoded;
+    req.user = decoded;
     next();
   } catch (error) {
     return res.status(403).json({ 
@@ -29,7 +37,7 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
 };
 
 export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
-  const user = (req as AuthenticatedRequest).user;
+  const user = req.user;
   
   if (!user || user.role !== 'admin') {
     return res.status(403).json({ 
@@ -42,7 +50,7 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
 };
 
 export const requireEvaluator = (req: Request, res: Response, next: NextFunction) => {
-  const user = (req as AuthenticatedRequest).user;
+  const user = req.user;
   
   if (!user || (user.role !== 'evaluator' && user.role !== 'admin')) {
     return res.status(403).json({ 
@@ -52,4 +60,19 @@ export const requireEvaluator = (req: Request, res: Response, next: NextFunction
   }
   
   next();
+};
+
+export const requireRole = (allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user;
+    
+    if (!user || !allowedRoles.includes(user.role)) {
+      return res.status(403).json({ 
+        error: `Access denied. Required roles: ${allowedRoles.join(', ')}`,
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
+    }
+    
+    next();
+  };
 };
