@@ -149,7 +149,7 @@ router.post('/refresh', async (req, res) => {
     }
     
     const decoded = verifyToken(refreshToken);
-    const user = await UserService.findById(decoded.userId);
+    const user = await UserService.findById(decoded.id);
     
     if (!user) {
       return res.status(401).json({
@@ -176,9 +176,9 @@ router.post('/refresh', async (req, res) => {
 
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const { userId } = (req as AuthenticatedRequest).user;
+    const { id } = (req as AuthenticatedRequest).user;
     
-    const user = await UserService.findById(userId);
+    const user = await UserService.findById(id);
     if (!user) {
       return res.status(404).json({
         error: 'User not found',

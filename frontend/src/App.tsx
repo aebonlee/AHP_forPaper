@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from './components/layout/Layout';
 import LoginForm from './components/auth/LoginForm';
 import Card from './components/common/Card';
+import ModelBuilder from './components/model/ModelBuilder';
 
 const API_BASE_URL = 'https://ahp-forpaper.onrender.com';
 
@@ -17,6 +18,7 @@ function App() {
   const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     // 페이지 로드 시 토큰 확인
@@ -218,9 +220,20 @@ function App() {
                           <span className="text-xs text-gray-500">
                             평가자: {project.evaluator_count}명 | 상태: {project.status}
                           </span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(project.created_at).toLocaleDateString()}
-                          </span>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                setSelectedProjectId(project.id);
+                                setActiveTab('model-builder');
+                              }}
+                              className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                            >
+                              모델 구성
+                            </button>
+                            <span className="text-xs text-gray-500">
+                              {new Date(project.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -285,28 +298,22 @@ function App() {
         );
         
       case 'model-builder':
-        return (
-          <Card title="모델 빌더">
-            <div className="space-y-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
-                <h5 className="font-medium text-yellow-800">🏗️ 계층적 모델 빌더</h5>
-                <p className="text-yellow-700 text-sm mt-1">
-                  드래그 앤 드롭으로 AHP 계층 구조를 생성할 수 있습니다.
-                </p>
+        if (!selectedProjectId) {
+          return (
+            <Card title="모델 빌더">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 목록으로 이동
+                </button>
               </div>
-              <div className="text-gray-600">
-                <p>기능 구현 예정:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                  <li>목표(Goal) 설정</li>
-                  <li>주기준(Main Criteria) 추가</li>
-                  <li>세부기준(Sub Criteria) 계층 구성 (최대 4레벨)</li>
-                  <li>대안(Alternatives) 정의</li>
-                  <li>드래그 앤 드롭 인터페이스</li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-        );
+            </Card>
+          );
+        }
+        return <ModelBuilder projectId={selectedProjectId} />;
         
       case 'results':
         return (
