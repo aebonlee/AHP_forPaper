@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Card from '../common/Card';
 
 interface Criterion {
@@ -45,11 +45,7 @@ const ModelBuilder: React.FC<ModelBuilderProps> = ({ projectId, onSave }) => {
 
   const API_BASE_URL = 'https://ahp-forpaper.onrender.com';
 
-  useEffect(() => {
-    fetchProject();
-  }, [projectId]);
-
-  const fetchProject = async () => {
+  const fetchProject = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -96,7 +92,11 @@ const ModelBuilder: React.FC<ModelBuilderProps> = ({ projectId, onSave }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    fetchProject();
+  }, [fetchProject]);
 
   const buildHierarchy = (criteria: Criterion[]): Criterion[] => {
     const criteriaMap = new Map<string, Criterion>();

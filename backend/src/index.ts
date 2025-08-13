@@ -5,6 +5,11 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { runMigrations } from './database/migrate';
 import authRoutes from './routes/auth';
+import projectRoutes from './routes/projects';
+import criteriaRoutes from './routes/criteria';
+import alternativeRoutes from './routes/alternatives';
+import comparisonRoutes from './routes/comparisons';
+import userRoutes from './routes/users';
 
 dotenv.config();
 
@@ -24,6 +29,11 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/criteria', criteriaRoutes);
+app.use('/api/alternatives', alternativeRoutes);
+app.use('/api/comparisons', comparisonRoutes);
+app.use('/api/users', userRoutes);
 
 app.listen(PORT, async () => {
   console.log(`🚀 Server running on port ${PORT}`);
