@@ -1,15 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from './components/layout/Layout';
 import LoginForm from './components/auth/LoginForm';
 import Card from './components/common/Card';
-import Button from './components/common/Button';
 
-// Demo data for GitHub Pages
-const DEMO_USER = {
-  first_name: 'Demo',
-  last_name: 'User',
-  role: 'admin' as const
-};
+const API_BASE_URL = 'https://ahp-forpaper.onrender.com';
 
 function App() {
   const [user, setUser] = useState<{
@@ -20,62 +14,169 @@ function App() {
   const [activeTab, setActiveTab] = useState('projects');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [projects, setProjects] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // 페이지 로드 시 토큰 확인
+    const token = localStorage.getItem('token');
+    if (token) {
+      validateToken(token);
+    }
+  }, []);
+
+  const validateToken = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+      }
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    }
+  };
 
   const handleLogin = async (email: string, password: string) => {
     setLoginLoading(true);
     setLoginError('');
 
     try {
-      // Demo login - accept any credentials
-      setTimeout(() => {
-        if (email && password) {
-          setUser(DEMO_USER);
-        } else {
-          setLoginError('Please enter email and password');
-        }
-        setLoginLoading(false);
-      }, 1000);
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      setUser(data.user);
       
     } catch (error) {
-      setLoginError('Login failed');
+      setLoginError(error instanceof Error ? error.message : 'Login failed');
+    } finally {
       setLoginLoading(false);
     }
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     setUser(null);
     setActiveTab('projects');
   };
 
+  const fetchProjects = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProjects(data.projects || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createSampleProject = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/projects`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: '샘플 AHP 프로젝트',
+          description: 'AHP 의사결정 분석을 위한 샘플 프로젝트입니다.',
+          objective: '최적의 대안을 선택하기 위한 다기준 의사결정'
+        }),
+      });
+
+      if (response.ok) {
+        fetchProjects();
+      }
+    } catch (error) {
+      console.error('Failed to create sample project:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user && activeTab === 'projects') {
+      fetchProjects();
+    } else if (user && activeTab === 'users' && user.role === 'admin') {
+      fetchUsers();
+    }
+  }, [user, activeTab]);
+
   const renderDemoNotice = () => (
     <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <h3 className="text-blue-800 font-medium mb-2">🚀 AHP Decision Support System - Demo Version</h3>
-      <p className="text-blue-700 text-sm mb-3">
-        이것은 GitHub Pages에서 호스팅되는 데모 버전입니다. 백엔드 기능은 시뮬레이션됩니다.
-      </p>
+      <h3 className="text-blue-800 font-medium mb-2">🚀 AHP Decision Support System - 실제 API 연결됨</h3>
       <div className="text-blue-600 text-xs space-y-1">
         <div>
-          <strong>완전한 백엔드 API:</strong> 
-          <a 
-            href="https://ahp-forpaper.onrender.com/api/health" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="ml-2 underline"
-          >
+          <strong>백엔드 API:</strong> 
+          <a href="https://ahp-forpaper.onrender.com/api/health" target="_blank" rel="noopener noreferrer" className="underline ml-1">
             https://ahp-forpaper.onrender.com
           </a>
         </div>
-        <div>
-          <strong>소스코드:</strong> 
-          <a 
-            href="https://github.com/aebonlee/AHP_forPaper" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="ml-2 underline"
-          >
-            GitHub 저장소
-          </a>
-        </div>
+        <div><strong>데모 계정:</strong> admin@ahp-system.com / password123</div>
+        <div><strong>기능:</strong> 실제 데이터베이스 연동, JWT 인증, CRUD 작업</div>
       </div>
     </div>
   );
@@ -85,182 +186,246 @@ function App() {
       return null;
     }
 
-    const demoData = {
-      projects: [
-        { id: 1, name: '소프트웨어 선택 프로젝트', status: '활성', evaluators: 3, criteria: 8, alternatives: 5 },
-        { id: 2, name: '공급업체 선정', status: '완료', evaluators: 5, criteria: 6, alternatives: 4 },
-        { id: 3, name: '투자 우선순위 결정', status: '초안', evaluators: 2, criteria: 12, alternatives: 7 }
-      ],
-      criteria: [
-        { name: '비용', weight: 0.35, children: ['초기비용', '유지보수비용', '교육비용'] },
-        { name: '기능', weight: 0.45, children: ['핵심기능', '고급기능'] },
-        { name: '사용성', weight: 0.20, children: ['사용자인터페이스', '학습곡선', '문서화'] }
-      ],
-      alternatives: [
-        { name: 'Software A', score: 0.28, rank: 2 },
-        { name: 'Software B', score: 0.32, rank: 1 },
-        { name: 'Software C', score: 0.15, rank: 4 },
-        { name: 'Software D', score: 0.18, rank: 3 },
-        { name: 'Software E', score: 0.07, rank: 5 }
-      ]
-    };
-
     switch (activeTab) {
       case 'projects':
         return (
-          <div className="space-y-6">
-            {renderDemoNotice()}
-            <Card title="AHP 프로젝트 관리">
-              <div className="mb-4">
-                <Button variant="primary" className="mr-3">새 프로젝트 생성</Button>
-                <Button variant="secondary">프로젝트 가져오기</Button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">프로젝트명</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평가자</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">기준</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">대안</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {demoData.projects.map(project => (
-                      <tr key={project.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{project.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            project.status === '활성' ? 'bg-green-100 text-green-800' :
-                            project.status === '완료' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {project.status}
+          <Card title="프로젝트 관리">
+            {loading ? (
+              <div className="text-center py-4">데이터 로딩 중...</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">내 프로젝트 ({projects.length}개)</h4>
+                  <button
+                    onClick={createSampleProject}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  >
+                    샘플 프로젝트 생성
+                  </button>
+                </div>
+                
+                {projects.length === 0 ? (
+                  <div className="text-gray-500 text-center py-8">
+                    프로젝트가 없습니다. 새 프로젝트를 생성해보세요.
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {projects.map((project: any) => (
+                      <div key={project.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                        <h5 className="font-medium text-lg">{project.title}</h5>
+                        <p className="text-gray-600 text-sm mt-1">{project.description}</p>
+                        <div className="flex justify-between items-center mt-3">
+                          <span className="text-xs text-gray-500">
+                            평가자: {project.evaluator_count}명 | 상태: {project.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.evaluators}명</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.criteria}개</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.alternatives}개</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <Button size="sm" variant="primary" className="mr-2">편집</Button>
-                          <Button size="sm" variant="secondary">결과</Button>
-                        </td>
-                      </tr>
+                          <span className="text-xs text-gray-500">
+                            {new Date(project.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                )}
               </div>
-            </Card>
-          </div>
+            )}
+          </Card>
         );
-
+        
+      case 'users':
+        return (
+          <Card title="사용자 관리">
+            {user.role !== 'admin' ? (
+              <div className="text-red-500">관리자만 접근 가능합니다.</div>
+            ) : loading ? (
+              <div className="text-center py-4">데이터 로딩 중...</div>
+            ) : (
+              <div className="space-y-4">
+                <h4 className="font-medium">전체 사용자 ({users.length}명)</h4>
+                {users.length === 0 ? (
+                  <div className="text-gray-500 text-center py-8">
+                    등록된 사용자가 없습니다.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이메일</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">역할</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">생성일</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {users.map((user: any) => (
+                          <tr key={user.id}>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                              {user.first_name} {user.last_name}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
+                            <td className="px-6 py-4 text-sm text-gray-500">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {user.role === 'admin' ? '관리자' : '평가자'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-500">
+                              {new Date(user.created_at).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        );
+        
       case 'model-builder':
         return (
-          <div className="space-y-6">
-            {renderDemoNotice()}
-            <Card title="계층적 모델 빌더">
-              <div className="mb-4">
-                <Button variant="primary" className="mr-3">기준 추가</Button>
-                <Button variant="secondary" className="mr-3">대안 추가</Button>
-                <Button variant="success">모델 검증</Button>
+          <Card title="모델 빌더">
+            <div className="space-y-4">
+              <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
+                <h5 className="font-medium text-yellow-800">🏗️ 계층적 모델 빌더</h5>
+                <p className="text-yellow-700 text-sm mt-1">
+                  드래그 앤 드롭으로 AHP 계층 구조를 생성할 수 있습니다.
+                </p>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-lg font-medium mb-3">평가 기준 계층</h4>
-                  <div className="border rounded-lg p-4">
-                    {demoData.criteria.map((criterion, index) => (
-                      <div key={index} className="mb-4">
-                        <div className="flex items-center justify-between bg-gray-50 p-3 rounded">
-                          <span className="font-medium">{criterion.name}</span>
-                          <span className="text-sm text-gray-500">가중치: {criterion.weight}</span>
-                        </div>
-                        <div className="ml-4 mt-2">
-                          {criterion.children.map((child, childIndex) => (
-                            <div key={childIndex} className="py-1 px-3 text-sm text-gray-600">
-                              └ {child}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium mb-3">대안 목록</h4>
-                  <div className="border rounded-lg p-4">
-                    {demoData.alternatives.map((alternative, index) => (
-                      <div key={index} className="flex items-center justify-between py-2 border-b last:border-b-0">
-                        <span>{alternative.name}</span>
-                        <div className="text-sm text-gray-500">
-                          순위 #{alternative.rank} (점수: {alternative.score.toFixed(3)})
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="text-gray-600">
+                <p>기능 구현 예정:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                  <li>목표(Goal) 설정</li>
+                  <li>주기준(Main Criteria) 추가</li>
+                  <li>세부기준(Sub Criteria) 계층 구성 (최대 4레벨)</li>
+                  <li>대안(Alternatives) 정의</li>
+                  <li>드래그 앤 드롭 인터페이스</li>
+                </ul>
               </div>
-            </Card>
-          </div>
+            </div>
+          </Card>
         );
-
+        
       case 'results':
         return (
-          <div className="space-y-6">
-            {renderDemoNotice()}
-            <Card title="AHP 결과 분석">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="text-lg font-medium mb-3">최종 순위</h4>
-                  <div className="space-y-2">
-                    {demoData.alternatives.sort((a, b) => a.rank - b.rank).map((alternative, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                        <div className="flex items-center">
-                          <span className="font-bold text-lg mr-3">#{alternative.rank}</span>
-                          <span>{alternative.name}</span>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-medium">{(alternative.score * 100).toFixed(1)}%</div>
-                          <div className="w-24 bg-gray-200 rounded-full h-2 mt-1">
-                            <div 
-                              className="bg-primary-600 h-2 rounded-full" 
-                              style={{width: `${alternative.score * 100}%`}}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <h4 className="text-lg font-medium mb-3">기준별 가중치</h4>
-                  <div className="space-y-3">
-                    {demoData.criteria.map((criterion, index) => (
-                      <div key={index}>
-                        <div className="flex justify-between mb-1">
-                          <span>{criterion.name}</span>
-                          <span className="font-medium">{(criterion.weight * 100).toFixed(1)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div 
-                            className="bg-secondary-600 h-3 rounded-full" 
-                            style={{width: `${criterion.weight * 100}%`}}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+          <Card title="결과 대시보드">
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded p-4">
+                <h5 className="font-medium text-green-800">📊 AHP 분석 결과</h5>
+                <p className="text-green-700 text-sm mt-1">
+                  최종 우선순위와 일관성 비율을 확인할 수 있습니다.
+                </p>
+              </div>
+              <div className="text-gray-600">
+                <p>표시될 결과:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                  <li>대안별 최종 우선순위 (가중치)</li>
+                  <li>기준별 중요도 순위</li>
+                  <li>일관성 비율 (CR) 검증</li>
+                  <li>민감도 분석</li>
+                  <li>시각화 차트 (Recharts)</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        );
+        
+      case 'dashboard':
+        return (
+          <Card title="평가자 대시보드">
+            <div className="space-y-4">
+              <div className="bg-purple-50 border border-purple-200 rounded p-4">
+                <h5 className="font-medium text-purple-800">👤 내 평가 현황</h5>
+                <p className="text-purple-700 text-sm mt-1">
+                  할당된 프로젝트의 평가 진행 상황을 확인합니다.
+                </p>
+              </div>
+              <div className="text-gray-600">
+                <p>평가자 기능:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                  <li>할당된 프로젝트 목록</li>
+                  <li>평가 완료율 확인</li>
+                  <li>미완료 쌍대비교 알림</li>
+                  <li>개인 평가 결과 미리보기</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        );
+        
+      case 'evaluations':
+        return (
+          <Card title="쌍대비교 평가">
+            <div className="space-y-4">
+              <div className="bg-orange-50 border border-orange-200 rounded p-4">
+                <h5 className="font-medium text-orange-800">⚖️ Saaty 1-9 척도 평가</h5>
+                <p className="text-orange-700 text-sm mt-1">
+                  기준과 대안을 쌍대비교하여 중요도를 평가합니다.
+                </p>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded">
+                <h6 className="font-medium mb-2">Saaty 척도 가이드:</h6>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                  <div>1 = 동등하게 중요</div>
+                  <div>3 = 약간 더 중요</div>
+                  <div>5 = 강하게 더 중요</div>
+                  <div>7 = 매우 강하게 더 중요</div>
+                  <div>9 = 극도로 더 중요</div>
+                  <div>2,4,6,8 = 중간값</div>
                 </div>
               </div>
-            </Card>
-          </div>
+              
+              <div className="text-gray-600">
+                <p>평가 프로세스:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                  <li>기준 간 쌍대비교</li>
+                  <li>대안 간 쌍대비교 (각 기준별)</li>
+                  <li>일관성 검증</li>
+                  <li>자동 상호비교 매트릭스 생성</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
         );
-
+        
+      case 'progress':
+        return (
+          <Card title="진행 상황">
+            <div className="space-y-4">
+              <div className="bg-indigo-50 border border-indigo-200 rounded p-4">
+                <h5 className="font-medium text-indigo-800">📈 프로젝트 진행률</h5>
+                <p className="text-indigo-700 text-sm mt-1">
+                  각 단계별 완료 상황을 추적합니다.
+                </p>
+              </div>
+              <div className="text-gray-600">
+                <p>추적 항목:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
+                  <li>모델 구축 완료율</li>
+                  <li>평가자별 응답률</li>
+                  <li>쌍대비교 완료 현황</li>
+                  <li>일관성 검증 상태</li>
+                  <li>최종 결과 생성 여부</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        );
+        
       default:
         return (
-          <Card title="Welcome">
-            <p className="text-gray-600">AHP 의사결정 지원 시스템에 오신 것을 환영합니다!</p>
+          <Card title="환영합니다">
+            <div className="text-center py-8">
+              <h3 className="text-xl font-medium text-gray-900 mb-4">
+                AHP 의사결정 지원 시스템에 오신 것을 환영합니다!
+              </h3>
+              <p className="text-gray-600">
+                다기준 의사결정 분석을 위한 전문 도구입니다.
+              </p>
+            </div>
           </Card>
         );
     }
@@ -268,31 +433,8 @@ function App() {
 
   if (!user) {
     return (
-      <div>
-        <div className="min-h-screen bg-gray-50 py-12">
-          <div className="max-w-md mx-auto mb-8">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <h3 className="text-yellow-800 font-medium mb-2">📖 Demo Version</h3>
-              <p className="text-yellow-700 text-sm mb-2">
-                이것은 GitHub Pages 데모 버전입니다. 아무 이메일과 비밀번호로 로그인하세요.
-              </p>
-              <p className="text-yellow-600 text-xs mb-2">
-                예: demo@example.com / 123456
-              </p>
-              <div className="text-yellow-600 text-xs border-t pt-2 mt-2">
-                <div className="font-medium">완전한 백엔드 API:</div>
-                <a 
-                  href="https://ahp-forpaper.onrender.com/api/health" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="underline"
-                >
-                  https://ahp-forpaper.onrender.com
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        {renderDemoNotice()}
         <LoginForm
           onLogin={handleLogin}
           loading={loginLoading}
@@ -303,14 +445,17 @@ function App() {
   }
 
   return (
-    <Layout
-      user={user}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      onLogout={handleLogout}
-    >
-      {renderContent()}
-    </Layout>
+    <div className="min-h-screen bg-gray-50">
+      {renderDemoNotice()}
+      <Layout
+        user={user}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onLogout={handleLogout}
+      >
+        {renderContent()}
+      </Layout>
+    </div>
   );
 }
 

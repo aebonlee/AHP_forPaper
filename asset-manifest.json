@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/AHP_forPaper/static/css/main.689a2b95.css",
+    "main.js": "/AHP_forPaper/static/js/main.167dcc44.js",
+    "static/js/453.670e15c7.chunk.js": "/AHP_forPaper/static/js/453.670e15c7.chunk.js",
+    "index.html": "/AHP_forPaper/index.html",
+    "main.689a2b95.css.map": "/AHP_forPaper/static/css/main.689a2b95.css.map",
+    "main.167dcc44.js.map": "/AHP_forPaper/static/js/main.167dcc44.js.map",
+    "453.670e15c7.chunk.js.map": "/AHP_forPaper/static/js/453.670e15c7.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.689a2b95.css",
+    "static/js/main.167dcc44.js"
+  ]
+}
