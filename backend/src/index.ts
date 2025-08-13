@@ -22,7 +22,8 @@ app.use(helmet({
 const allowedOrigins = [
   'http://localhost:3000',
   'https://aebonlee.github.io',
-  'https://ahp-frontend-render.onrender.com'
+  'https://ahp-frontend-render.onrender.com',
+  'https://ahp-forpaper.onrender.com'
 ];
 
 app.use(cors({

@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ahp-backend
+    name: ahp-forpaper
     env: node
     plan: starter
     region: oregon
@@ -20,18 +20,6 @@ services:
         generateValue: true
       - key: CORS_ORIGIN
         value: https://aebonlee.github.io
-
-  - type: web
-    name: ahp-frontend-render
-    env: static
-    plan: starter
-    region: oregon
-    buildCommand: cd frontend && npm ci && REACT_APP_API_URL=https://ahp-backend.onrender.com npm run build
-    staticPublishPath: frontend/build
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
 
 databases:
   - name: ahp-postgres
