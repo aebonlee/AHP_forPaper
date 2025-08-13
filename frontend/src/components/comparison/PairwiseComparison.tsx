@@ -66,7 +66,9 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
   const [saving, setSaving] = useState(false);
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
 
-  const API_BASE_URL = 'https://ahp-forpaper.onrender.com';
+  const API_BASE_URL = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:5000' 
+    : 'https://ahp-forpaper.onrender.com';
 
   // Generate all possible pairs
   const pairs = React.useMemo(() => {

@@ -48,7 +48,9 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ projectId, projectT
   const [finalResults, setFinalResults] = useState<any>(null);
   const [error, setError] = useState<string>('');
 
-  const API_BASE_URL = 'https://ahp-forpaper.onrender.com';
+  const API_BASE_URL = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:5000' 
+    : 'https://ahp-forpaper.onrender.com';
 
   const fetchData = useCallback(async () => {
     const token = localStorage.getItem('token');

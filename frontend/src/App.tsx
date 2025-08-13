@@ -3,8 +3,7 @@ import Layout from './components/layout/Layout';
 import LoginForm from './components/auth/LoginForm';
 import Card from './components/common/Card';
 import ModelBuilder from './components/model/ModelBuilder';
-
-const API_BASE_URL = 'https://ahp-forpaper.onrender.com';
+import { API_BASE_URL } from './config/api';
 
 function App() {
   const [user, setUser] = useState<{

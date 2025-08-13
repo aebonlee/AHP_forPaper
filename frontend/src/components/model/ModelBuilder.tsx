@@ -43,7 +43,9 @@ const ModelBuilder: React.FC<ModelBuilderProps> = ({ projectId, onSave }) => {
   const [newAlternativeName, setNewAlternativeName] = useState('');
   const [newAlternativeDescription, setNewAlternativeDescription] = useState('');
 
-  const API_BASE_URL = 'https://ahp-forpaper.onrender.com';
+  const API_BASE_URL = process.env.NODE_ENV === 'development' 
+    ? 'http://localhost:5000' 
+    : 'https://ahp-forpaper.onrender.com';
 
   const fetchProject = useCallback(async () => {
     const token = localStorage.getItem('token');

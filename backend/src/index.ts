@@ -24,6 +24,23 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'AHP Decision Support System API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      projects: '/api/projects',
+      criteria: '/api/criteria',
+      alternatives: '/api/alternatives',
+      comparisons: '/api/comparisons',
+      users: '/api/users'
+    }
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
