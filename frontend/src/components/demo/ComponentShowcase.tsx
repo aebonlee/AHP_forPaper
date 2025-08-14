@@ -10,6 +10,7 @@ import JudgmentHelperPanel from '../evaluation/JudgmentHelperPanel';
 import HierarchyBuilder from '../project/HierarchyBuilder';
 import SensitivityView from '../analysis/SensitivityView';
 import BudgetingView from '../analysis/BudgetingView';
+import ApiTestPage from './ApiTestPage';
 import { calculateAHP, buildComparisonMatrix } from '../../utils/ahpCalculator';
 
 // 테스트 데이터
@@ -154,7 +155,8 @@ const ComponentShowcase: React.FC = () => {
     { id: 'helper', name: 'JudgmentHelper', icon: '📋', description: '판단 도우미 패널' },
     { id: 'hierarchy', name: 'HierarchyBuilder', icon: '🌳', description: '계층구조 편집기' },
     { id: 'sensitivity', name: 'SensitivityView', icon: '📊', description: '민감도 분석' },
-    { id: 'budgeting', name: 'BudgetingView', icon: '💰', description: '예산배분 최적화' }
+    { id: 'budgeting', name: 'BudgetingView', icon: '💰', description: '예산배분 최적화' },
+    { id: 'apitest', name: 'API Test', icon: '🧪', description: 'API 통합 테스트' }
   ];
 
   const renderActiveComponent = () => {
@@ -378,6 +380,9 @@ const ComponentShowcase: React.FC = () => {
             />
           </div>
         );
+
+      case 'apitest':
+        return <ApiTestPage />;
 
       default:
         return <div>컴포넌트를 선택하세요.</div>;

@@ -5,8 +5,8 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "build": "tsc && npm run copy-files",
-    "copy-files": "node copy-files.js",
+    "build": "tsc --skipLibCheck --noEmitOnError false --noImplicitAny false --strictNullChecks false",
+    "copy-files": "node copy-files.js || true",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

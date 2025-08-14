@@ -17,7 +17,7 @@ const router = express.Router();
  */
 router.post('/assign',
   authenticateToken,
-  requireRole('admin'),
+  requireRole(['admin']),
   [
     body('project_id').isInt().withMessage('Project ID must be an integer'),
     body('evaluator_code').isString().isLength({min: 1, max: 50}).withMessage('Evaluator code is required'),
@@ -219,7 +219,7 @@ router.get('/project/:projectId',
  */
 router.put('/:evaluatorId/weight',
   authenticateToken,
-  requireRole('admin'),
+  requireRole(['admin']),
   [
     param('evaluatorId').isInt().withMessage('Evaluator ID must be an integer'),
     body('project_id').isInt().withMessage('Project ID must be an integer'),
@@ -288,7 +288,7 @@ router.put('/:evaluatorId/weight',
  */
 router.delete('/:evaluatorId/project/:projectId',
   authenticateToken,
-  requireRole('admin'),
+  requireRole(['admin']),
   [
     param('evaluatorId').isInt().withMessage('Evaluator ID must be an integer'),
     param('projectId').isInt().withMessage('Project ID must be an integer')

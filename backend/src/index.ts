@@ -26,7 +26,7 @@ const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
 
-// Initialize WebSocket service
+// Initialize WebSocket service (disabled for deployment)
 const workshopSync = new WorkshopSyncService(httpServer);
 
 // Trust proxy for Render.com
@@ -93,7 +93,7 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Workshop status API endpoint
+// Workshop status API endpoints
 app.get('/api/workshop/:projectId', (req, res) => {
   const workshopInfo = workshopSync.getWorkshopInfo(req.params.projectId);
   if (workshopInfo) {

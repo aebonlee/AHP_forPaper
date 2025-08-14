@@ -541,10 +541,12 @@ function performSensitivityAnalysis(
     const adjustedWeights = { ...criteriaWeights };
     adjustedWeights[targetCriterionId] *= factor;
     
-    // 정규화
-    const totalWeight = Object.values(adjustedWeights).reduce((sum: number, weight) => sum + (weight as number), 0);
+    // 정규화 (타입 안전하게)
+    const weights = Object.values(adjustedWeights).map(w => Number(w));
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
     Object.keys(adjustedWeights).forEach(key => {
-      adjustedWeights[key] = (adjustedWeights[key] as number) / totalWeight;
+      const currentWeight = Number(adjustedWeights[key]);
+      adjustedWeights[key] = currentWeight / totalWeight;
     });
 
     // 새로운 순위 계산
