@@ -17,6 +17,8 @@ export interface ComparisonInput {
   element1_id: string;
   element2_id: string;
   value: number;
+  i?: number;
+  j?: number;
 }
 
 // Random Index (RI) values for consistency ratio calculation

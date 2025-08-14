@@ -37,8 +37,8 @@ const EvaluatorAssignment: React.FC<EvaluatorAssignmentProps> = ({ projectId, on
       setLoading(true);
       const response = await evaluatorAPI.fetchByProject(parseInt(projectId));
       
-      if (response.data) {
-        setEvaluators(response.data.evaluators || []);
+      if (response.data && typeof response.data === 'object' && response.data !== null) {
+        setEvaluators((response.data as any).evaluators || []);
       } else if (response.error) {
         console.error('Failed to fetch evaluators:', response.error);
       }
@@ -104,7 +104,7 @@ const EvaluatorAssignment: React.FC<EvaluatorAssignmentProps> = ({ projectId, on
   };
 
   const removeEvaluator = async (evaluatorId: string) => {
-    if (!confirm('정말로 이 평가자를 제거하시겠습니까?')) return;
+    if (!window.confirm('정말로 이 평가자를 제거하시겠습니까?')) return;
 
     const token = localStorage.getItem('token');
     if (!token) return;
