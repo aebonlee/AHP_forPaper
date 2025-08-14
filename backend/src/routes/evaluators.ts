@@ -69,13 +69,14 @@ router.post('/assign',
       } else {
         // 새 평가자 계정 생성
         const newUser = await query(
-          `INSERT INTO users (email, password_hash, role, name)
-           VALUES ($1, $2, 'evaluator', $3)
+          `INSERT INTO users (email, password_hash, first_name, last_name, role)
+           VALUES ($1, $2, $3, $4, 'evaluator')
            RETURNING *`,
           [
             `${evaluator_code.toLowerCase()}@evaluator.local`,
             await hashPassword('defaultpassword'), // 임시 비밀번호
-            evaluator_name
+            evaluator_name,
+            'Evaluator'
           ]
         );
         evaluatorUser = newUser.rows[0];

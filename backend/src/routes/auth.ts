@@ -57,7 +57,7 @@ router.post('/register', registerValidation, async (req: Request, res: Response)
     
     const user = await UserService.createUser(userData);
     
-    const { password: _, ...userResponse } = user;
+    const { password_hash, ...userResponse } = user;
     
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -193,7 +193,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
       });
     }
     
-    const { password: _, ...userResponse } = user;
+    const { password_hash, ...userResponse } = user;
     
     res.json({
       user: userResponse
