@@ -23,8 +23,8 @@ router.post('/',
       const userId = (req as AuthenticatedRequest).user.id;
 
       const result = await query(
-        `INSERT INTO projects (title, description, objective, admin_id, status)
-         VALUES ($1, $2, $3, $4, 'draft')
+        `INSERT INTO projects (title, name, description, objective, admin_id, status)
+         VALUES ($1, $1, $2, $3, $4, 'draft')
          RETURNING *`,
         [title, description || null, objective || null, userId]
       );
