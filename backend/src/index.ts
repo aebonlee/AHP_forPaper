@@ -3,7 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import { runMigrations } from './database/migrate';
+import WorkshopSyncService from './services/workshopSync';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
 import projectRoutes from './routes/projects';
@@ -18,7 +20,11 @@ import analysisRoutes from './routes/analysis';
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Initialize WebSocket service
+const workshopSync = new WorkshopSyncService(httpServer);
 
 // Trust proxy for Render.com
 app.set('trust proxy', 1);
@@ -81,8 +87,23 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// Workshop status API endpoint
+app.get('/api/workshop/:projectId', (req, res) => {
+  const workshopInfo = workshopSync.getWorkshopInfo(req.params.projectId);
+  if (workshopInfo) {
+    res.json(workshopInfo);
+  } else {
+    res.status(404).json({ error: 'Workshop not found' });
+  }
+});
+
+app.get('/api/workshops', (req, res) => {
+  const workshops = workshopSync.getAllWorkshops();
+  res.json({ workshops });
+});
+
 // Start server
-const server = app.listen(PORT, async () => {
+const server = httpServer.listen(PORT, async () => {
   console.log(`🚀 AHP Backend Server started`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Port: ${PORT}`);
