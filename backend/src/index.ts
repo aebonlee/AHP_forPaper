@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { runMigrations } from './database/migrate';
+import { initDatabase } from './database/connection';
 import WorkshopSyncService from './services/workshopSync';
 import authRoutes from './routes/auth';
 import userRoutes from './routes/users';
@@ -110,25 +111,21 @@ app.get('/api/workshops', (req, res) => {
 
 // Start server
 const server = httpServer.listen(PORT, async () => {
-  console.log(`🚀 AHP Backend Server started`);
+  console.log(`🚀 AHP Backend Server started with SQLite v2`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Port: ${PORT}`);
   console.log(`🔗 Health check: /api/health`);
   
-  if (process.env.DATABASE_URL) {
-    try {
-      console.log('🔧 Running database migrations...');
-      await runMigrations();
-      console.log('✅ Database migrations completed successfully');
-    } catch (error) {
-      console.error('❌ Failed to run migrations:', error);
-      // Don't exit in production, log the error and continue
-      if (process.env.NODE_ENV !== 'production') {
-        process.exit(1);
-      }
+  try {
+    console.log('🔧 Initializing SQLite database...');
+    await initDatabase();
+    console.log('✅ Database initialization completed successfully');
+  } catch (error) {
+    console.error('❌ Failed to initialize database:', error);
+    // Don't exit in production, log the error and continue
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
     }
-  } else {
-    console.warn('⚠️  DATABASE_URL not set - skipping migrations');
   }
 });
 

@@ -57,7 +57,7 @@ router.post('/register', registerValidation, async (req: Request, res: Response)
     
     const user = await UserService.createUser(userData);
     
-    const { password_hash, ...userResponse } = user;
+    const { password: _, ...userResponse } = user;
     
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -90,8 +90,10 @@ router.post('/register', registerValidation, async (req: Request, res: Response)
 
 router.post('/login', loginValidation, async (req: Request, res: Response) => {
   try {
+    console.log('Login attempt started');
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({
         error: 'Validation failed',
         details: errors.array()
@@ -99,28 +101,36 @@ router.post('/login', loginValidation, async (req: Request, res: Response) => {
     }
 
     const { email, password }: LoginRequest = req.body;
+    console.log('Login attempt for email:', email);
     
     const user = await UserService.findByEmail(email);
+    console.log('User found:', !!user);
     if (!user) {
+      console.log('User not found');
       return res.status(401).json({
         error: 'Invalid credentials',
         code: 'INVALID_CREDENTIALS'
       });
     }
     
-    const isValidPassword = await comparePassword(password, user.password_hash);
+    console.log('Comparing passwords...');
+    const isValidPassword = await comparePassword(password, user.password);
+    console.log('Password valid:', isValidPassword);
     if (!isValidPassword) {
+      console.log('Password invalid');
       return res.status(401).json({
         error: 'Invalid credentials',
         code: 'INVALID_CREDENTIALS'
       });
     }
     
-    const { password_hash, ...userResponse } = user;
+    const { password: _, ...userResponse } = user;
     
+    console.log('Generating tokens...');
     const token = generateToken(user);
     const refreshToken = generateRefreshToken(user);
     
+    console.log('Login successful');
     res.json({
       message: 'Login successful',
       user: userResponse,
@@ -131,7 +141,7 @@ router.post('/login', loginValidation, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
-      error: 'Internal server error during login',
+      error: 'Internal server error during login: ' + error.message,
       code: 'LOGIN_FAILED'
     });
   }
@@ -186,7 +196,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
       });
     }
     
-    const { password_hash, ...userResponse } = user;
+    const { password: _, ...userResponse } = user;
     
     res.json({
       user: userResponse
