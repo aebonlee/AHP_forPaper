@@ -11,7 +11,7 @@ router.get('/', authenticateToken, requireAdmin, async (req: Request, res: Respo
     const users = await UserService.getAllUsers(role as 'admin' | 'evaluator');
 
     const usersResponse = users.map(user => {
-      const { password: _, ...userWithoutPassword } = user;
+      const { password_hash, ...userWithoutPassword } = user;
       return userWithoutPassword;
     });
 
@@ -40,7 +40,7 @@ router.post('/',
       }
 
       const user = await UserService.createUser(req.body);
-      const { password: _, ...userResponse } = user;
+      const { password_hash, ...userResponse } = user;
 
       res.status(201).json({ user: userResponse });
     } catch (error: any) {
@@ -71,7 +71,7 @@ router.put('/:id',
 
       const { id } = req.params;
       const user = await UserService.updateUser(id, req.body);
-      const { password: _, ...userResponse } = user;
+      const { password_hash, ...userResponse } = user;
 
       res.json({ user: userResponse });
     } catch (error: any) {

@@ -11,46 +11,29 @@ export class UserService {
       throw new Error('User with this email already exists');
     }
 
-    const hashedPassword = await hashPassword(password);
+    const password_hash = await hashPassword(password);
     
-    // 프로덕션(PostgreSQL)과 개발(SQLite) 환경 구분
-    if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
-      // PostgreSQL RETURNING 구문 사용
-      const result = await query(
-        `INSERT INTO users (email, password_hash, first_name, last_name, role)
-         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [email, hashedPassword, first_name, last_name, role]
-      );
-      return result.rows[0];
-    } else {
-      // SQLite 환경
-      const result = await query(
-        `INSERT INTO users (email, password, first_name, last_name, role)
-         VALUES (?, ?, ?, ?, ?)`,
-        [email, hashedPassword, first_name, last_name, role]
-      );
-      
-      const newUser = await query('SELECT * FROM users WHERE id = ?', [result.lastID]);
-      return newUser.rows[0];
-    }
+    const result = await query(
+      `INSERT INTO users (email, password_hash, first_name, last_name, role)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [email, password_hash, first_name, last_name, role]
+    );
+    
+    return result.rows[0];
   }
 
   static async findByEmail(email: string): Promise<User | null> {
-    console.log('Finding user by email:', email);
     const result = await query(
-      'SELECT * FROM users WHERE email = ?',
+      'SELECT * FROM users WHERE email = $1 AND is_active = true',
       [email]
     );
-    
-    console.log('Query result:', result);
-    console.log('Found user:', result.rows[0]);
     
     return result.rows[0] || null;
   }
 
   static async findById(id: string): Promise<User | null> {
     const result = await query(
-      'SELECT * FROM users WHERE id = ?',
+      'SELECT * FROM users WHERE id = $1 AND is_active = true',
       [id]
     );
     
@@ -58,11 +41,11 @@ export class UserService {
   }
 
   static async getAllUsers(role?: 'admin' | 'evaluator'): Promise<User[]> {
-    let queryText = 'SELECT * FROM users';
+    let queryText = 'SELECT * FROM users WHERE is_active = true';
     let params: any[] = [];
     
     if (role) {
-      queryText += ' WHERE role = ?';
+      queryText += ' AND role = $1';
       params.push(role);
     }
     
@@ -72,21 +55,19 @@ export class UserService {
     return result.rows;
   }
 
-  static async updateUser(id: string, updates: Partial<Pick<User, 'first_name' | 'last_name' | 'email'>>): Promise<User> {
+  static async updateUser(id: string, updates: Partial<Pick<User, 'first_name' | 'last_name' | 'email' | 'is_active'>>): Promise<User> {
     const setClause = Object.keys(updates)
-      .map((key, index) => `${key} = ?`)
+      .map((key, index) => `${key} = $${index + 2}`)
       .join(', ');
     
-    const values = [...Object.values(updates), id];
+    const values = [id, ...Object.values(updates)];
     
-    await query(
+    const result = await query(
       `UPDATE users SET ${setClause}, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
+       WHERE id = $1
+       RETURNING *`,
       values
     );
-    
-    // SQLite에서 업데이트된 사용자 조회
-    const result = await query('SELECT * FROM users WHERE id = ?', [id]);
     
     if (result.rows.length === 0) {
       throw new Error('User not found');
@@ -97,11 +78,11 @@ export class UserService {
 
   static async deleteUser(id: string): Promise<void> {
     const result = await query(
-      'DELETE FROM users WHERE id = ?',
+      'UPDATE users SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1',
       [id]
     );
     
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       throw new Error('User not found');
     }
   }

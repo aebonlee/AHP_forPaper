@@ -113,20 +113,15 @@ router.post('/login', loginValidation, async (req: Request, res: Response) => {
       });
     }
     
-    console.log('Comparing passwords...');
-    // 환경에 따라 패스워드 필드 선택
-    const passwordField = user.password_hash || user.password;
-    const isValidPassword = await comparePassword(password, passwordField);
-    console.log('Password valid:', isValidPassword);
+    const isValidPassword = await comparePassword(password, user.password_hash);
     if (!isValidPassword) {
-      console.log('Password invalid');
       return res.status(401).json({
         error: 'Invalid credentials',
         code: 'INVALID_CREDENTIALS'
       });
     }
     
-    const { password: _, password_hash, ...userResponse } = user;
+    const { password_hash, ...userResponse } = user;
     
     console.log('Generating tokens...');
     const token = generateToken(user);

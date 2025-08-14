@@ -1,12 +1,11 @@
 export interface User {
   id: string;
   email: string;
-  password: string;
-  password_hash?: string; // PostgreSQL용 호환성
+  password_hash: string;
   first_name: string;
   last_name: string;
   role: 'admin' | 'evaluator';
-  is_active?: boolean; // PostgreSQL용 호환성
+  is_active: boolean;
   created_at: Date;
   updated_at: Date;
 }
