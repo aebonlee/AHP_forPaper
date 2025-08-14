@@ -13,15 +13,26 @@ export class UserService {
 
     const hashedPassword = await hashPassword(password);
     
-    const result = await query(
-      `INSERT INTO users (email, password, first_name, last_name, role)
-       VALUES (?, ?, ?, ?, ?)`,
-      [email, hashedPassword, first_name, last_name, role]
-    );
-    
-    // SQLite에서 새로 생성된 사용자 조회
-    const newUser = await query('SELECT * FROM users WHERE id = ?', [result.lastID]);
-    return newUser.rows[0];
+    // 프로덕션(PostgreSQL)과 개발(SQLite) 환경 구분
+    if (process.env.NODE_ENV === 'production' && process.env.DATABASE_URL) {
+      // PostgreSQL RETURNING 구문 사용
+      const result = await query(
+        `INSERT INTO users (email, password_hash, first_name, last_name, role)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [email, hashedPassword, first_name, last_name, role]
+      );
+      return result.rows[0];
+    } else {
+      // SQLite 환경
+      const result = await query(
+        `INSERT INTO users (email, password, first_name, last_name, role)
+         VALUES (?, ?, ?, ?, ?)`,
+        [email, hashedPassword, first_name, last_name, role]
+      );
+      
+      const newUser = await query('SELECT * FROM users WHERE id = ?', [result.lastID]);
+      return newUser.rows[0];
+    }
   }
 
   static async findByEmail(email: string): Promise<User | null> {

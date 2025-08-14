@@ -116,15 +116,28 @@ const server = httpServer.listen(PORT, async () => {
   console.log(`🌐 Port: ${PORT}`);
   console.log(`🔗 Health check: /api/health`);
   
-  try {
-    console.log('🔧 Initializing SQLite database...');
-    await initDatabase();
-    console.log('✅ Database initialization completed successfully');
-  } catch (error) {
-    console.error('❌ Failed to initialize database:', error);
-    // Don't exit in production, log the error and continue
-    if (process.env.NODE_ENV !== 'production') {
-      process.exit(1);
+  // 환경별 데이터베이스 초기화
+  if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+    try {
+      console.log('🔧 Running PostgreSQL database migrations...');
+      await runMigrations();
+      console.log('✅ Database migrations completed successfully');
+    } catch (error) {
+      console.error('❌ Failed to run migrations:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+      }
+    }
+  } else {
+    try {
+      console.log('🔧 Initializing SQLite database...');
+      await initDatabase();
+      console.log('✅ SQLite database initialization completed successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize database:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        process.exit(1);
+      }
     }
   }
 });
