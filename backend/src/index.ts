@@ -75,10 +75,10 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api', userRoutes);
-app.use('/api', projectRoutes);
-app.use('/api', criteriaRoutes);
-app.use('/api', alternativesRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/criteria', criteriaRoutes);
+app.use('/api/alternatives', alternativesRoutes);
 app.use('/api/comparisons', comparisonsRoutes);
 app.use('/api/evaluate', evaluateRoutes);
 app.use('/api/evaluators', evaluatorsRoutes);
@@ -116,20 +116,22 @@ const server = httpServer.listen(PORT, async () => {
   console.log(`🌐 Port: ${PORT}`);
   console.log(`🔗 Health check: /api/health`);
   
-  if (process.env.DATABASE_URL) {
-    try {
+  try {
+    if (process.env.DATABASE_URL) {
       console.log('🔧 Running database migrations...');
       await runMigrations();
       console.log('✅ Database migrations completed successfully');
-    } catch (error) {
-      console.error('❌ Failed to run migrations:', error);
-      // Don't exit in production, log the error and continue
-      if (process.env.NODE_ENV !== 'production') {
-        process.exit(1);
-      }
+    } else {
+      console.log('🔧 Initializing SQLite database...');
+      await initDatabase();
+      console.log('✅ SQLite database initialized successfully');
     }
-  } else {
-    console.warn('⚠️  DATABASE_URL not set - skipping migrations');
+  } catch (error) {
+    console.error('❌ Failed to initialize database:', error);
+    // Don't exit in production, log the error and continue
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
   }
 });
 
