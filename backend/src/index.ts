@@ -10,6 +10,10 @@ import projectRoutes from './routes/projects';
 import criteriaRoutes from './routes/criteria';
 import alternativesRoutes from './routes/alternatives';
 import comparisonsRoutes from './routes/comparisons';
+import evaluateRoutes from './routes/evaluate';
+import evaluatorsRoutes from './routes/evaluators';
+import resultsRoutes from './routes/results';
+import analysisRoutes from './routes/analysis';
 
 dotenv.config();
 
@@ -65,7 +69,11 @@ app.use('/api', userRoutes);
 app.use('/api', projectRoutes);
 app.use('/api', criteriaRoutes);
 app.use('/api', alternativesRoutes);
-app.use('/api', comparisonsRoutes);
+app.use('/api/comparisons', comparisonsRoutes);
+app.use('/api/evaluate', evaluateRoutes);
+app.use('/api/evaluators', evaluatorsRoutes);
+app.use('/api/results', resultsRoutes);
+app.use('/api/analysis', analysisRoutes);
 
 // Error handling middleware
 app.use((err: any, req: any, res: any, next: any) => {

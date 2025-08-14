@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Card from '../common/Card';
+import EvaluatorAssignment from '../admin/EvaluatorAssignment';
 import { DEMO_PROJECTS, DEMO_CRITERIA, DEMO_ALTERNATIVES } from '../../data/demoData';
 
 interface Criterion {
@@ -44,6 +45,7 @@ const ModelBuilder: React.FC<ModelBuilderProps> = ({ projectId, onSave, demoMode
   const [editingAlternative, setEditingAlternative] = useState<string | null>(null);
   const [newAlternativeName, setNewAlternativeName] = useState('');
   const [newAlternativeDescription, setNewAlternativeDescription] = useState('');
+  const [activeTab, setActiveTab] = useState<'criteria' | 'alternatives' | 'evaluators' | 'settings'>('criteria');
 
   const API_BASE_URL = process.env.NODE_ENV === 'development' 
     ? 'http://localhost:5000' 
@@ -400,16 +402,57 @@ const ModelBuilder: React.FC<ModelBuilderProps> = ({ projectId, onSave, demoMode
             <p className="text-blue-700">{project.objective || project.description}</p>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h4 className="font-medium text-yellow-800 mb-2">📊 AHP 계층 구조</h4>
-            <p className="text-yellow-700 text-sm">
-              계층적 분석 구조를 구성하세요. 최대 4레벨까지 지원됩니다.
-            </p>
+          {/* 탭 네비게이션 */}
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8">
+              <button
+                onClick={() => setActiveTab('criteria')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'criteria' 
+                    ? 'border-blue-500 text-blue-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                평가 기준
+              </button>
+              <button
+                onClick={() => setActiveTab('alternatives')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'alternatives' 
+                    ? 'border-blue-500 text-blue-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                대안
+              </button>
+              <button
+                onClick={() => setActiveTab('evaluators')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'evaluators' 
+                    ? 'border-blue-500 text-blue-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                평가자 배정
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'settings' 
+                    ? 'border-blue-500 text-blue-600' 
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                설정
+              </button>
+            </nav>
           </div>
         </div>
       </Card>
 
-      <Card title="평가 기준 (Criteria)">
+      {/* 탭별 컨텐츠 */}
+      {activeTab === 'criteria' && (
+        <Card title="평가 기준 (Criteria)">
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">기준 계층 구조</h4>
@@ -471,9 +514,11 @@ const ModelBuilder: React.FC<ModelBuilderProps> = ({ projectId, onSave, demoMode
             </div>
           )}
         </div>
-      </Card>
+        </Card>
+      )}
 
-      <Card title="대안 (Alternatives)">
+      {activeTab === 'alternatives' && (
+        <Card title="대안 (Alternatives)">
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h4 className="font-medium">대안 목록</h4>
@@ -550,8 +595,43 @@ const ModelBuilder: React.FC<ModelBuilderProps> = ({ projectId, onSave, demoMode
             </div>
           )}
         </div>
-      </Card>
+        </Card>
+      )}
 
+      {activeTab === 'evaluators' && (
+        <EvaluatorAssignment 
+          projectId={projectId}
+          onComplete={() => {
+            // 평가자 배정 완료 후 처리
+            console.log('Evaluator assignment completed');
+          }}
+        />
+      )}
+
+      {activeTab === 'settings' && (
+        <Card title="프로젝트 설정">
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h5 className="font-medium text-blue-800 mb-2">⚙️ 모델 설정</h5>
+              <p className="text-blue-700 text-sm">
+                향후 버전에서 평가 방법론, 일관성 임계값 등의 설정을 관리할 수 있습니다.
+              </p>
+            </div>
+            
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h6 className="font-medium mb-2">현재 설정</h6>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p>• 평가 방법: 쌍대비교 (Pairwise Comparison)</p>
+                <p>• 일관성 임계값: 0.1</p>
+                <p>• 가중치 계산: 기하평균법 (Geometric Mean)</p>
+                <p>• 그룹 의사결정: 가중평균</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* 모델 상태는 모든 탭에서 공통으로 표시 */}
       <Card title="모델 상태">
         <div className="space-y-3">
           <div className="flex justify-between items-center">

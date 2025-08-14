@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
-import { query } from '../database/connection';
+import { query } from '../db/database';
 
 const router = express.Router();
 
@@ -75,14 +75,16 @@ router.get('/:projectId', authenticateToken, async (req: Request, res: Response)
   }
 });
 
-// Create or update a pairwise comparison
+// Create or update a pairwise comparison (improved with matrix_key support)
 router.post('/',
   authenticateToken,
   [
-    body('project_id').isUUID().withMessage('Valid project ID is required'),
-    body('criterion_id').isUUID().withMessage('Valid criterion ID is required'),
+    body('project_id').isInt().withMessage('Valid project ID is required'),
+    body('matrix_key').isString().withMessage('Matrix key is required'),
+    body('i_index').isInt({min: 0}).withMessage('i_index must be non-negative integer'),
+    body('j_index').isInt({min: 0}).withMessage('j_index must be non-negative integer'),
     body('value').isFloat({ min: 0.111, max: 9 }).withMessage('Comparison value must be between 1/9 and 9'),
-    // Either criteria comparison or alternatives comparison
+    // Legacy support for old format
     body('criterion1_id').optional().isUUID(),
     body('criterion2_id').optional().isUUID(),
     body('alternative1_id').optional().isUUID(),
@@ -97,8 +99,12 @@ router.post('/',
 
       const {
         project_id,
-        criterion_id,
+        matrix_key,
+        i_index,
+        j_index,
         value,
+        // Legacy fields
+        criterion_id,
         criterion1_id,
         criterion2_id,
         alternative1_id,
@@ -127,7 +133,53 @@ router.post('/',
         return res.status(404).json({ error: 'Project not found or access denied' });
       }
 
-      // Validate that we have either criteria pair or alternatives pair
+      // Support both new matrix_key format and legacy format
+      if (matrix_key && i_index !== undefined && j_index !== undefined) {
+        // New format with matrix_key
+        if (i_index === j_index) {
+          return res.status(400).json({ error: 'Diagonal elements must be 1 (cannot compare element with itself)' });
+        }
+        
+        // Ensure we store only upper triangular matrix (i < j)
+        const [i, j] = i_index < j_index ? [i_index, j_index] : [j_index, i_index];
+        const adjustedValue = i_index < j_index ? value : 1 / value;
+        
+        // Check if comparison already exists
+        const existingComparison = await query(
+          `SELECT * FROM pairwise_comparisons 
+           WHERE project_id = $1 AND evaluator_id = $2 AND matrix_key = $3 
+           AND i_index = $4 AND j_index = $5`,
+          [project_id, userId, matrix_key, i, j]
+        );
+
+        let result;
+        if (existingComparison.rows.length > 0) {
+          // Update existing comparison
+          result = await query(
+            `UPDATE pairwise_comparisons 
+             SET value = $1, updated_at = CURRENT_TIMESTAMP
+             WHERE id = $2
+             RETURNING *`,
+            [adjustedValue, existingComparison.rows[0].id]
+          );
+        } else {
+          // Create new comparison
+          result = await query(
+            `INSERT INTO pairwise_comparisons 
+             (project_id, evaluator_id, matrix_key, i_index, j_index, value)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             RETURNING *`,
+            [project_id, userId, matrix_key, i, j, adjustedValue]
+          );
+        }
+
+        return res.status(201).json({ 
+          message: 'Pairwise comparison saved successfully',
+          comparison: result.rows[0] 
+        });
+      }
+      
+      // Legacy format validation (for backward compatibility)
       if (criterion1_id && criterion2_id) {
         if (alternative1_id || alternative2_id) {
           return res.status(400).json({ 
@@ -140,9 +192,9 @@ router.post('/',
             error: 'Cannot compare both criteria and alternatives in the same comparison' 
           });
         }
-      } else {
+      } else if (!matrix_key) {
         return res.status(400).json({ 
-          error: 'Must provide either criterion pair or alternative pair for comparison' 
+          error: 'Must provide either matrix_key with indices or criterion/alternative pairs for comparison' 
         });
       }
 
