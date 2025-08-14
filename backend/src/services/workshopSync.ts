@@ -6,7 +6,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
-import { query } from '../db/database';
+import { query } from '../database/connection';
 
 interface WorkshopParticipant {
   socketId: string;

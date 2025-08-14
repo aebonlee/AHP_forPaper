@@ -6,7 +6,7 @@
 import express from 'express';
 import { body, param, validationResult } from 'express-validator';
 import { authenticateToken, requireRole } from '../middleware/auth';
-import { query } from '../db/database';
+import { query } from '../database/connection';
 import crypto from 'crypto';
 
 const router = express.Router();

@@ -16,6 +16,9 @@ import evaluateRoutes from './routes/evaluate';
 import evaluatorsRoutes from './routes/evaluators';
 import resultsRoutes from './routes/results';
 import analysisRoutes from './routes/analysis';
+import matrixRoutes from './routes/matrix';
+import computeRoutes from './routes/compute';
+import exportRoutes from './routes/export';
 
 dotenv.config();
 
@@ -80,6 +83,9 @@ app.use('/api/evaluate', evaluateRoutes);
 app.use('/api/evaluators', evaluatorsRoutes);
 app.use('/api/results', resultsRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/matrix', matrixRoutes);
+app.use('/api/compute', computeRoutes);
+app.use('/api/export', exportRoutes);
 
 // Error handling middleware
 app.use((err: any, req: any, res: any, next: any) => {

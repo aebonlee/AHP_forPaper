@@ -3,7 +3,7 @@
  * K5/SM5/소나타 차량 선택 AHP 시나리오 데이터 생성
  */
 
-import { query } from '../db/database';
+import { query } from '../database/connection';
 
 interface TestDataSet {
   project: any;

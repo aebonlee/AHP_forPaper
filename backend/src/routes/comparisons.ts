@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
-import { query } from '../db/database';
+import { query } from '../database/connection';
 
 const router = express.Router();
 

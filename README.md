@@ -4,20 +4,65 @@
 웹 기반 AHP(Analytic Hierarchy Process) 의사결정 지원 시스템입니다. 다기준 의사결정을 위한 계층적 모델링, 쌍대비교, 종합적인 결과 분석을 제공합니다.
 
 ## 기술 스택
-- **Frontend**: React 18+ with TypeScript, Tailwind CSS 3.4+
+- **Frontend**: React 19+ with TypeScript, Tailwind CSS 3.4+
 - **Backend**: Node.js with Express and TypeScript
 - **Database**: PostgreSQL
 - **Authentication**: JWT with bcrypt
 - **Visualization**: Recharts
+- **UI Components**: react-beautiful-dnd (drag & drop)
 - **State Management**: Zustand
 
 ## 주요 기능
-1. **사용자 인증 시스템** - JWT 기반 인증, 역할별 접근 제어 (관리자/평가자)
-2. **프로젝트 관리** - AHP 프로젝트 생성, 편집, 삭제
-3. **계층적 모델 빌더** - 최대 4레벨 기준 계층 구조 생성
-4. **쌍대비교 인터페이스** - Saaty 1-9 척도를 사용한 비교 평가
-5. **AHP 계산 엔진** - 고유값 방법을 사용한 우선순위 계산
-6. **결과 대시보드** - 차트와 그래프를 통한 결과 시각화
+
+### 🎯 핵심 UI 컴포넌트 (완료)
+1. **PairwiseGrid** - n×n 쌍대비교 매트릭스 (상삼각 활성화, Saaty 9점 척도)
+2. **CRBadge** - 일관성 비율(CR) 시각화 (색상 코딩, 상세 툴팁)
+3. **JudgmentHelperPanel** - AI 기반 일관성 개선 제안 시스템
+4. **HierarchyBuilder** - 드래그&드롭 계층구조 편집기 (최대 4레벨)
+5. **SensitivityView** - 실시간 민감도 분석 (슬라이더, 다중 차트)
+6. **BudgetingView** - 예산배분 최적화 및 시나리오 분석
+
+### 🔧 시스템 기능
+- **사용자 인증 시스템** - JWT 기반 인증, 역할별 접근 제어
+- **프로젝트 관리** - AHP 프로젝트 생성, 편집, 삭제
+- **AHP 계산 엔진** - 기하평균법을 사용한 우선순위 계산
+- **결과 대시보드** - Recharts 기반 시각화
+- **Excel 내보내기** - 분석 결과 다운로드
+
+## API 시퀀스 (쌍대비교 → 통합 → 결과)
+
+### 📋 샘플 워크플로우
+```javascript
+// 1. 비교 항목 조회
+GET /api/matrix/:projectId?type=criteria&level=1
+// Response: { elements: [{ id, name, description }] }
+
+// 2. 쌍대비교 평가 (여러 번 반복)
+POST /api/evaluate/pairwise
+// Body: { projectId, elementIds: [id1, id2], value: 3, evaluatorId }
+
+// 3. 가중치 계산 (로컬)
+POST /api/compute/weights
+// Body: { matrix: [[1,3,2],[1/3,1,1/2],[1/2,2,1]] }
+// Response: { localWeights: [0.5, 0.2, 0.3], CR: 0.08 }
+
+// 4. 글로벌 가중치 계산
+POST /api/compute/global
+// Body: { projectId, criteriaWeights, alternativeWeights }
+// Response: { criterionGlobal, alternativeByCriterion }
+
+// 5. 그룹 가중치 적용 및 최종 순위
+POST /api/aggregate
+// Body: { projectId, groupWeights: { evaluator1: 0.6, evaluator2: 0.4 } }
+// Response: { finalRanking: [{ alternativeId, score, rank }] }
+
+// 6. Excel 내보내기
+GET /api/export/excel/:projectId
+// Response: Excel file download
+```
+
+### 🔄 컴포넌트 통합 테스트
+모든 핵심 컴포넌트는 `/src/components/demo/ComponentShowcase.tsx`에서 테스트할 수 있습니다.
 
 ## 설치 및 실행
 
@@ -110,15 +155,28 @@ docker-compose down
 - 비밀번호: password123
 
 ## 개발 상태
+
 ✅ **Phase 1 완료** - 기초 시스템 구축
 - 프로젝트 구조 초기화
 - 데이터베이스 스키마 
 - JWT 인증 시스템
 - UI 레이아웃 시스템
 
-🔄 **Phase 2 진행 예정** - 핵심 기능 구현
-- 프로젝트 CRUD 작업
-- 계층적 모델 빌더
-- 쌍대비교 인터페이스
-- AHP 계산 엔진
-- 결과 대시보드
+✅ **Phase 2 완료** - 핵심 UI 컴포넌트 구현
+- 6개 핵심 UI 컴포넌트 (PairwiseGrid, CRBadge, JudgmentHelperPanel, HierarchyBuilder, SensitivityView, BudgetingView)
+- TypeScript 타입 안전성 보장
+- Recharts 기반 시각화
+- 드래그&드롭 기능 (react-beautiful-dnd)
+- 통합 테스트 페이지 (ComponentShowcase)
+
+🔄 **Phase 3 진행 중** - API 통합 및 완성
+- 쌍대비교 → 통합 → 결과 API 시퀀스
+- Excel 내보내기 기능
+- 그룹 평가 및 가중치 집계
+- 최종 시스템 통합 테스트
+
+## 🎯 핵심 컴포넌트 데모
+구현된 모든 컴포넌트는 다음 경로에서 확인할 수 있습니다:
+- **데모 페이지**: `/src/components/demo/ComponentShowcase.tsx`
+- **테스트 데이터**: 의도적 비일관성 포함 (CR>0.1 테스트)
+- **실시간 기능**: 슬라이더, 드래그&드롭, 차트 업데이트
