@@ -2,8 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Layout from './components/layout/Layout';
 import LoginForm from './components/auth/LoginForm';
 import Card from './components/common/Card';
-
-const API_BASE_URL = 'https://ahp-forpaper.onrender.com';
+import ModelBuilder from './components/model/ModelBuilder';
+import PairwiseComparison from './components/comparison/PairwiseComparison';
+import ResultsDashboard from './components/results/ResultsDashboard';
+import { API_BASE_URL } from './config/api';
+import { 
+  DEMO_USER, 
+  DEMO_PROJECTS, 
+  DEMO_CRITERIA,
+  DEMO_ALTERNATIVES,
+  DEMO_LOGIN_CREDENTIALS, 
+  isBackendAvailable 
+} from './data/demoData';
 
 function App() {
   const [user, setUser] = useState<{
@@ -17,14 +27,45 @@ function App() {
   const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
 
   useEffect(() => {
-    // 페이지 로드 시 토큰 확인
-    const token = localStorage.getItem('token');
-    if (token) {
-      validateToken(token);
-    }
+    // 페이지 로드 시 백엔드 상태 확인 후 토큰 확인
+    checkBackendAndInitialize();
   }, []);
+
+  const checkBackendAndInitialize = async () => {
+    try {
+      setBackendStatus('checking');
+      const available = await isBackendAvailable();
+      
+      if (available) {
+        setBackendStatus('available');
+        setIsDemoMode(false);
+        // 백엔드가 사용 가능하면 토큰 확인
+        const token = localStorage.getItem('token');
+        if (token) {
+          validateToken(token);
+        }
+      } else {
+        setBackendStatus('unavailable');
+        setIsDemoMode(true);
+        // 데모 모드 자동 활성화
+        setUser(DEMO_USER);
+        setProjects(DEMO_PROJECTS);
+        setSelectedProjectId(DEMO_PROJECTS[0].id);
+      }
+    } catch (error) {
+      console.log('Backend check failed, activating demo mode');
+      setBackendStatus('unavailable');
+      setIsDemoMode(true);
+      setUser(DEMO_USER);
+      setProjects(DEMO_PROJECTS);
+      setSelectedProjectId(DEMO_PROJECTS[0].id);
+    }
+  };
 
   const validateToken = async (token: string) => {
     try {
@@ -53,6 +94,18 @@ function App() {
     setLoginError('');
 
     try {
+      // 데모 모드에서는 데모 크리덴셜로 바로 로그인
+      if (isDemoMode) {
+        if (email === DEMO_LOGIN_CREDENTIALS.email && password === DEMO_LOGIN_CREDENTIALS.password) {
+          setUser(DEMO_USER);
+          setProjects(DEMO_PROJECTS);
+          setSelectedProjectId(DEMO_PROJECTS[0].id);
+        } else {
+          throw new Error('데모 모드: admin@ahp-system.com / password123을 사용하세요');
+        }
+        return;
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
@@ -166,17 +219,46 @@ function App() {
   }, [user, activeTab]);
 
   const renderDemoNotice = () => (
-    <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <h3 className="text-blue-800 font-medium mb-2">🚀 AHP Decision Support System - 실제 API 연결됨</h3>
-      <div className="text-blue-600 text-xs space-y-1">
-        <div>
-          <strong>백엔드 API:</strong> 
-          <a href="https://ahp-forpaper.onrender.com/api/health" target="_blank" rel="noopener noreferrer" className="underline ml-1">
-            https://ahp-forpaper.onrender.com
-          </a>
-        </div>
-        <div><strong>데모 계정:</strong> admin@ahp-system.com / password123</div>
-        <div><strong>기능:</strong> 실제 데이터베이스 연동, JWT 인증, CRUD 작업</div>
+    <div className={`mb-6 border rounded-lg p-4 ${
+      backendStatus === 'checking' ? 'bg-yellow-50 border-yellow-200' :
+      backendStatus === 'available' ? 'bg-blue-50 border-blue-200' :
+      'bg-orange-50 border-orange-200'
+    }`}>
+      <h3 className={`font-medium mb-2 ${
+        backendStatus === 'checking' ? 'text-yellow-800' :
+        backendStatus === 'available' ? 'text-blue-800' :
+        'text-orange-800'
+      }`}>
+        {backendStatus === 'checking' ? '⏳ 백엔드 연결 확인 중...' :
+         backendStatus === 'available' ? '🚀 AHP Decision Support System - 실제 API 연결됨' :
+         '📋 AHP Decision Support System - 데모 모드 활성화'}
+      </h3>
+      <div className={`text-xs space-y-1 ${
+        backendStatus === 'checking' ? 'text-yellow-600' :
+        backendStatus === 'available' ? 'text-blue-600' :
+        'text-orange-600'
+      }`}>
+        {backendStatus === 'checking' ? (
+          <div>백엔드 서버 상태를 확인하고 있습니다...</div>
+        ) : backendStatus === 'available' ? (
+          <>
+            <div>
+              <strong>백엔드 API:</strong> 
+              <a href="https://ahp-forpaper.onrender.com/api/health" target="_blank" rel="noopener noreferrer" className="underline ml-1">
+                https://ahp-forpaper.onrender.com
+              </a>
+            </div>
+            <div><strong>데모 계정:</strong> admin@ahp-system.com / password123</div>
+            <div><strong>기능:</strong> 실제 데이터베이스 연동, JWT 인증, CRUD 작업</div>
+          </>
+        ) : (
+          <>
+            <div><strong>상태:</strong> 백엔드 서버 배포 대기 중 (Render.com)</div>
+            <div><strong>데모 계정:</strong> admin@ahp-system.com / password123</div>
+            <div><strong>기능:</strong> 샘플 데이터로 UI 미리보기, 모든 AHP 기능 체험 가능</div>
+            <div><strong>참고:</strong> 데이터는 저장되지 않으며, 새로고침 시 초기화됩니다</div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -218,9 +300,20 @@ function App() {
                           <span className="text-xs text-gray-500">
                             평가자: {project.evaluator_count}명 | 상태: {project.status}
                           </span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(project.created_at).toLocaleDateString()}
-                          </span>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                setSelectedProjectId(project.id);
+                                setActiveTab('model-builder');
+                              }}
+                              className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                            >
+                              모델 구성
+                            </button>
+                            <span className="text-xs text-gray-500">
+                              {new Date(project.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -285,51 +378,45 @@ function App() {
         );
         
       case 'model-builder':
-        return (
-          <Card title="모델 빌더">
-            <div className="space-y-4">
-              <div className="bg-yellow-50 border border-yellow-200 rounded p-4">
-                <h5 className="font-medium text-yellow-800">🏗️ 계층적 모델 빌더</h5>
-                <p className="text-yellow-700 text-sm mt-1">
-                  드래그 앤 드롭으로 AHP 계층 구조를 생성할 수 있습니다.
-                </p>
+        if (!selectedProjectId) {
+          return (
+            <Card title="모델 빌더">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 목록으로 이동
+                </button>
               </div>
-              <div className="text-gray-600">
-                <p>기능 구현 예정:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                  <li>목표(Goal) 설정</li>
-                  <li>주기준(Main Criteria) 추가</li>
-                  <li>세부기준(Sub Criteria) 계층 구성 (최대 4레벨)</li>
-                  <li>대안(Alternatives) 정의</li>
-                  <li>드래그 앤 드롭 인터페이스</li>
-                </ul>
-              </div>
-            </div>
-          </Card>
-        );
+            </Card>
+          );
+        }
+        return <ModelBuilder projectId={selectedProjectId} demoMode={isDemoMode} />;
         
       case 'results':
+        if (!selectedProjectId) {
+          return (
+            <Card title="결과 대시보드">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 목록으로 이동
+                </button>
+              </div>
+            </Card>
+          );
+        }
         return (
-          <Card title="결과 대시보드">
-            <div className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded p-4">
-                <h5 className="font-medium text-green-800">📊 AHP 분석 결과</h5>
-                <p className="text-green-700 text-sm mt-1">
-                  최종 우선순위와 일관성 비율을 확인할 수 있습니다.
-                </p>
-              </div>
-              <div className="text-gray-600">
-                <p>표시될 결과:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                  <li>대안별 최종 우선순위 (가중치)</li>
-                  <li>기준별 중요도 순위</li>
-                  <li>일관성 비율 (CR) 검증</li>
-                  <li>민감도 분석</li>
-                  <li>시각화 차트 (Recharts)</li>
-                </ul>
-              </div>
-            </div>
-          </Card>
+          <ResultsDashboard 
+            projectId={selectedProjectId} 
+            projectTitle={isDemoMode ? DEMO_PROJECTS[0].title : 'AHP 프로젝트'}
+            demoMode={isDemoMode}
+          />
         );
         
       case 'dashboard':
@@ -356,39 +443,28 @@ function App() {
         );
         
       case 'evaluations':
+        if (!selectedProjectId) {
+          return (
+            <Card title="쌍대비교 평가">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 목록으로 이동
+                </button>
+              </div>
+            </Card>
+          );
+        }
         return (
-          <Card title="쌍대비교 평가">
-            <div className="space-y-4">
-              <div className="bg-orange-50 border border-orange-200 rounded p-4">
-                <h5 className="font-medium text-orange-800">⚖️ Saaty 1-9 척도 평가</h5>
-                <p className="text-orange-700 text-sm mt-1">
-                  기준과 대안을 쌍대비교하여 중요도를 평가합니다.
-                </p>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded">
-                <h6 className="font-medium mb-2">Saaty 척도 가이드:</h6>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                  <div>1 = 동등하게 중요</div>
-                  <div>3 = 약간 더 중요</div>
-                  <div>5 = 강하게 더 중요</div>
-                  <div>7 = 매우 강하게 더 중요</div>
-                  <div>9 = 극도로 더 중요</div>
-                  <div>2,4,6,8 = 중간값</div>
-                </div>
-              </div>
-              
-              <div className="text-gray-600">
-                <p>평가 프로세스:</p>
-                <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                  <li>기준 간 쌍대비교</li>
-                  <li>대안 간 쌍대비교 (각 기준별)</li>
-                  <li>일관성 검증</li>
-                  <li>자동 상호비교 매트릭스 생성</li>
-                </ul>
-              </div>
-            </div>
-          </Card>
+          <PairwiseComparison 
+            projectId={selectedProjectId} 
+            criteria={isDemoMode ? DEMO_CRITERIA : []}
+            alternatives={isDemoMode ? DEMO_ALTERNATIVES : []}
+            demoMode={isDemoMode}
+          />
         );
         
       case 'progress':

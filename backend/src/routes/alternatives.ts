@@ -1,225 +1,178 @@
 import express, { Request, Response } from 'express';
-import { body, param, validationResult } from 'express-validator';
-import pool from '../database/connection';
-import { authenticateToken } from '../middleware/auth';
+import { body, validationResult } from 'express-validator';
+import { authenticateToken, AuthenticatedRequest } from '../middleware/auth';
+import { query } from '../database/connection';
 
 const router = express.Router();
 
-router.post('/alternatives',
-  authenticateToken,
-  [
-    body('project_id').isUUID().withMessage('Invalid project ID format'),
-    body('name').trim().isLength({ min: 1, max: 255 }).withMessage('Name is required and must be less than 255 characters'),
-    body('description').optional().isLength({ max: 1000 }).withMessage('Description must be less than 1000 characters')
-  ],
-  async (req: Request, res: Response) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ error: 'Validation failed', details: errors.array() });
-      }
+// Get all alternatives for a project
+router.get('/:projectId', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    const userId = (req as AuthenticatedRequest).user.id;
+    const userRole = (req as AuthenticatedRequest).user.role;
 
-      const { project_id, name, description } = req.body;
-      const userId = req.user.id;
+    // Check project access
+    let accessQuery = 'SELECT id FROM projects WHERE id = $1';
+    let accessParams = [projectId];
 
-      const projectResult = await pool.query(
-        `SELECT created_by FROM projects WHERE id = $1`,
-        [project_id]
-      );
-
-      if (projectResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Project not found' });
-      }
-
-      const project = projectResult.rows[0];
-      const userRole = req.user.role;
-
-      if (userRole !== 'admin' && project.created_by !== userId) {
-        return res.status(403).json({ error: 'Access denied. Only project creators can add alternatives.' });
-      }
-
-      const result = await pool.query(
-        `INSERT INTO alternatives (project_id, name, description)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [project_id, name, description || null]
-      );
-
-      const alternative = result.rows[0];
-
-      res.status(201).json({
-        message: 'Alternative created successfully',
-        alternative: {
-          id: alternative.id,
-          project_id: alternative.project_id,
-          name: alternative.name,
-          description: alternative.description,
-          created_at: alternative.created_at
-        }
-      });
-    } catch (error) {
-      console.error('Create alternative error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+    if (userRole === 'evaluator') {
+      accessQuery += ` AND (admin_id = $2 OR EXISTS (
+        SELECT 1 FROM project_evaluators pe WHERE pe.project_id = $1 AND pe.evaluator_id = $2
+      ))`;
+      accessParams.push(userId);
+    } else {
+      accessQuery += ' AND admin_id = $2';
+      accessParams.push(userId);
     }
-  }
-);
 
-router.get('/projects/:project_id/alternatives',
+    const accessResult = await query(accessQuery, accessParams);
+    if (accessResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found or access denied' });
+    }
+
+    const alternativesResult = await query(
+      'SELECT * FROM alternatives WHERE project_id = $1 ORDER BY order_index, name',
+      [projectId]
+    );
+
+    res.json({ alternatives: alternativesResult.rows });
+  } catch (error) {
+    console.error('Alternatives fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch alternatives' });
+  }
+});
+
+// Create a new alternative
+router.post('/',
   authenticateToken,
   [
-    param('project_id').isUUID().withMessage('Invalid project ID format')
+    body('project_id').isUUID().withMessage('Valid project ID is required'),
+    body('name').trim().isLength({ min: 1, max: 255 }).withMessage('Name is required'),
+    body('description').optional().isLength({ max: 1000 }),
+    body('order_index').isInt({ min: 1 }).withMessage('Order index must be positive')
   ],
   async (req: Request, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ error: 'Invalid request', details: errors.array() });
+        return res.status(400).json({ errors: errors.array() });
       }
 
-      const projectId = req.params.project_id;
-      const userId = req.user.id;
-      const userRole = req.user.role;
+      const { project_id, name, description, order_index } = req.body;
+      const userId = (req as AuthenticatedRequest).user.id;
+      const userRole = (req as AuthenticatedRequest).user.role;
 
-      let accessQuery = `
-        SELECT p.created_by 
-        FROM projects p
-        WHERE p.id = $1
-      `;
-      
-      if (userRole === 'evaluator') {
-        accessQuery += ` AND (p.created_by = $2 OR EXISTS(
-          SELECT 1 FROM project_evaluators pe WHERE pe.project_id = $1 AND pe.evaluator_id = $2
-        ))`;
+      // Check project access (only admins can create alternatives)
+      if (userRole !== 'admin') {
+        return res.status(403).json({ error: 'Only project admins can create alternatives' });
       }
 
-      const accessParams = userRole === 'evaluator' ? [projectId, userId] : [projectId];
-      const accessResult = await pool.query(accessQuery, accessParams);
+      const accessResult = await query(
+        'SELECT id FROM projects WHERE id = $1 AND admin_id = $2',
+        [project_id, userId]
+      );
 
       if (accessResult.rows.length === 0) {
         return res.status(404).json({ error: 'Project not found or access denied' });
       }
 
-      const alternativesResult = await pool.query(
-        `SELECT * FROM alternatives WHERE project_id = $1 ORDER BY created_at`,
-        [projectId]
-      );
-
-      res.json({
-        alternatives: alternativesResult.rows
-      });
-    } catch (error) {
-      console.error('Get alternatives error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }
-);
-
-router.put('/alternatives/:id',
-  authenticateToken,
-  [
-    param('id').isUUID().withMessage('Invalid alternative ID format'),
-    body('name').trim().isLength({ min: 1, max: 255 }).withMessage('Name is required and must be less than 255 characters'),
-    body('description').optional().isLength({ max: 1000 }).withMessage('Description must be less than 1000 characters')
-  ],
-  async (req: Request, res: Response) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ error: 'Validation failed', details: errors.array() });
-      }
-
-      const alternativeId = req.params.id;
-      const { name, description } = req.body;
-      const userId = req.user.id;
-      const userRole = req.user.role;
-
-      const alternativeResult = await pool.query(
-        `SELECT a.*, p.created_by 
-         FROM alternatives a
-         JOIN projects p ON a.project_id = p.id
-         WHERE a.id = $1`,
-        [alternativeId]
-      );
-
-      if (alternativeResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Alternative not found' });
-      }
-
-      const alternative = alternativeResult.rows[0];
-
-      if (userRole !== 'admin' && alternative.created_by !== userId) {
-        return res.status(403).json({ error: 'Access denied. Only project creators can update alternatives.' });
-      }
-
-      const updateResult = await pool.query(
-        `UPDATE alternatives 
-         SET name = $1, description = $2, updated_at = NOW()
-         WHERE id = $3
+      const result = await query(
+        `INSERT INTO alternatives (project_id, name, description, order_index)
+         VALUES ($1, $2, $3, $4)
          RETURNING *`,
-        [name, description || null, alternativeId]
+        [project_id, name, description || null, order_index]
       );
 
-      const updatedAlternative = updateResult.rows[0];
-
-      res.json({
-        message: 'Alternative updated successfully',
-        alternative: {
-          id: updatedAlternative.id,
-          project_id: updatedAlternative.project_id,
-          name: updatedAlternative.name,
-          description: updatedAlternative.description,
-          updated_at: updatedAlternative.updated_at
-        }
-      });
+      res.status(201).json({ alternative: result.rows[0] });
     } catch (error) {
-      console.error('Update alternative error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Alternative creation error:', error);
+      res.status(500).json({ error: 'Failed to create alternative' });
     }
   }
 );
 
-router.delete('/alternatives/:id',
+// Update an alternative
+router.put('/:id',
   authenticateToken,
   [
-    param('id').isUUID().withMessage('Invalid alternative ID format')
+    body('name').optional().trim().isLength({ min: 1, max: 255 }),
+    body('description').optional().isLength({ max: 1000 }),
+    body('order_index').optional().isInt({ min: 1 })
   ],
   async (req: Request, res: Response) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ error: 'Invalid request', details: errors.array() });
+        return res.status(400).json({ errors: errors.array() });
       }
 
-      const alternativeId = req.params.id;
-      const userId = req.user.id;
-      const userRole = req.user.role;
+      const { id } = req.params;
+      const userId = (req as AuthenticatedRequest).user.id;
+      const updates = req.body;
 
-      const alternativeResult = await pool.query(
-        `SELECT a.*, p.created_by 
-         FROM alternatives a
+      // Check access
+      const checkResult = await query(
+        `SELECT a.* FROM alternatives a
          JOIN projects p ON a.project_id = p.id
-         WHERE a.id = $1`,
-        [alternativeId]
+         WHERE a.id = $1 AND p.admin_id = $2`,
+        [id, userId]
       );
 
-      if (alternativeResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Alternative not found' });
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Alternative not found or access denied' });
       }
 
-      const alternative = alternativeResult.rows[0];
+      const setClause = Object.keys(updates)
+        .map((key, index) => `${key} = $${index + 2}`)
+        .join(', ');
 
-      if (userRole !== 'admin' && alternative.created_by !== userId) {
-        return res.status(403).json({ error: 'Access denied. Only project creators can delete alternatives.' });
-      }
+      const values = [id, ...Object.values(updates)];
 
-      await pool.query('DELETE FROM alternatives WHERE id = $1', [alternativeId]);
+      const result = await query(
+        `UPDATE alternatives SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *`,
+        values
+      );
 
-      res.json({ message: 'Alternative deleted successfully' });
+      res.json({ alternative: result.rows[0] });
     } catch (error) {
-      console.error('Delete alternative error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Alternative update error:', error);
+      res.status(500).json({ error: 'Failed to update alternative' });
     }
   }
 );
+
+// Delete an alternative
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as AuthenticatedRequest).user.id;
+
+    // Check access
+    const checkResult = await query(
+      `SELECT a.*, p.admin_id FROM alternatives a
+       JOIN projects p ON a.project_id = p.id
+       WHERE a.id = $1`,
+      [id]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Alternative not found' });
+    }
+
+    if (checkResult.rows[0].admin_id !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    await query('DELETE FROM alternatives WHERE id = $1', [id]);
+
+    res.json({ message: 'Alternative deleted successfully' });
+  } catch (error) {
+    console.error('Alternative deletion error:', error);
+    res.status(500).json({ error: 'Failed to delete alternative' });
+  }
+});
 
 export default router;

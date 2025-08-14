@@ -176,9 +176,9 @@ router.post('/refresh', async (req, res) => {
 
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const { id: userId } = req.user;
+    const { id } = (req as AuthenticatedRequest).user;
     
-    const user = await UserService.findById(userId);
+    const user = await UserService.findById(id);
     if (!user) {
       return res.status(404).json({
         error: 'User not found',
