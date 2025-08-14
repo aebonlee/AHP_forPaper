@@ -11,12 +11,12 @@ export class UserService {
       throw new Error('User with this email already exists');
     }
 
-    const password_hash = await hashPassword(password);
+    const hashedPassword = await hashPassword(password);
     
     const result = await query(
       `INSERT INTO users (email, password, first_name, last_name, role)
        VALUES (?, ?, ?, ?, ?)`,
-      [email, password_hash, first_name, last_name, role]
+      [email, hashedPassword, first_name, last_name, role]
     );
     
     // SQLite에서 새로 생성된 사용자 조회
