@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
+import HierarchyTreeVisualization from '../common/HierarchyTreeVisualization';
+import { DEMO_CRITERIA, DEMO_SUB_CRITERIA, DEMO_ALTERNATIVES, DEMO_EVALUATORS } from '../../data/demoData';
 
 interface ModelFinalizationProps {
   projectId: string;
@@ -30,11 +32,11 @@ const ModelFinalization: React.FC<ModelFinalizationProps> = ({
 
   const getModelSummary = () => {
     return {
-      criteria: 4,
-      subCriteria: 8,
-      alternatives: 3,
-      evaluators: 2,
-      estimatedComparisons: 24
+      criteria: DEMO_CRITERIA.length, // 3개 상위 기준
+      subCriteria: DEMO_SUB_CRITERIA.length, // 9개 세부 기준
+      alternatives: DEMO_ALTERNATIVES.length, // 9개 대안
+      evaluators: DEMO_EVALUATORS.length, // 26명 평가자
+      estimatedComparisons: 126 // 26명 × (3개 상위기준 비교 + 15개 대안 비교)
     };
   };
 
@@ -51,13 +53,23 @@ const ModelFinalization: React.FC<ModelFinalizationProps> = ({
             </p>
           </div>
 
+          {/* Hierarchy Tree Visualization */}
+          <div>
+            <HierarchyTreeVisualization
+              nodes={[...DEMO_CRITERIA, ...DEMO_SUB_CRITERIA]}
+              title="AI 개발 활용 방안 최종 계층구조"
+              showWeights={true}
+              interactive={false}
+            />
+          </div>
+
           {/* Model Summary */}
           <div>
             <h4 className="font-medium text-gray-900 mb-4">📋 모델 요약</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-blue-900">{summary.criteria}</div>
-                <div className="text-sm text-blue-700">주요 기준</div>
+                <div className="text-sm text-blue-700">상위 기준</div>
               </div>
               <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-indigo-900">{summary.subCriteria}</div>
@@ -65,20 +77,38 @@ const ModelFinalization: React.FC<ModelFinalizationProps> = ({
               </div>
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-purple-900">{summary.alternatives}</div>
-                <div className="text-sm text-purple-700">대안</div>
+                <div className="text-sm text-purple-700">평가 대안</div>
               </div>
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-green-900">{summary.evaluators}</div>
-                <div className="text-sm text-green-700">평가자</div>
+                <div className="text-sm text-green-700">참여 평가자</div>
               </div>
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-orange-900">{summary.estimatedComparisons}</div>
-                <div className="text-sm text-orange-700">예상 비교</div>
+                <div className="text-sm text-orange-700">총 평가 수</div>
               </div>
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-gray-900">⏱️</div>
-                <div className="text-sm text-gray-700">약 30분</div>
+                <div className="text-sm text-gray-700">약 45분</div>
               </div>
+            </div>
+          </div>
+
+          {/* Alternatives Summary */}
+          <div>
+            <h4 className="font-medium text-gray-900 mb-4">🎯 평가 대안 목록</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {DEMO_ALTERNATIVES.slice(0, 9).map((alternative, index) => (
+                <div key={alternative.id} className="bg-white border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-900">{alternative.name}</span>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                      #{index + 1}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">{alternative.description}</p>
+                </div>
+              ))}
             </div>
           </div>
 

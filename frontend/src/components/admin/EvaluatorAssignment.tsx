@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
+import { DEMO_EVALUATORS } from '../../data/demoData';
 
 interface Evaluator {
   id: string;
@@ -11,6 +12,8 @@ interface Evaluator {
   status: 'pending' | 'invited' | 'active' | 'completed';
   inviteLink?: string;
   progress: number;
+  department?: string;
+  experience?: string;
 }
 
 interface EvaluatorAssignmentProps {
@@ -19,26 +22,24 @@ interface EvaluatorAssignmentProps {
 }
 
 const EvaluatorAssignment: React.FC<EvaluatorAssignmentProps> = ({ projectId, onComplete }) => {
-  const [evaluators, setEvaluators] = useState<Evaluator[]>([
-    { 
-      id: '1', 
-      code: 'EVL001', 
-      name: '김평가', 
-      email: 'evaluator1@example.com',
-      status: 'active',
-      inviteLink: 'https://ahp-system.com/eval/abc123',
-      progress: 75 
-    },
-    { 
-      id: '2', 
-      code: 'EVL002', 
-      name: '이전문', 
-      email: 'evaluator2@example.com',
-      status: 'invited',
-      inviteLink: 'https://ahp-system.com/eval/def456',
-      progress: 0 
-    }
-  ]);
+  const [evaluators, setEvaluators] = useState<Evaluator[]>([]);
+
+  useEffect(() => {
+    // 데모 데이터를 컴포넌트 형식으로 변환
+    const convertedEvaluators: Evaluator[] = DEMO_EVALUATORS.map((evaluator, index) => ({
+      id: evaluator.id,
+      code: `EVL${String(index + 1).padStart(3, '0')}`,
+      name: evaluator.name,
+      email: evaluator.email,
+      status: evaluator.status === 'completed' ? 'completed' : 
+              evaluator.status === 'in_progress' ? 'active' : 'invited',
+      inviteLink: `https://ahp-system.com/eval/${evaluator.id}`,
+      progress: evaluator.progress,
+      department: index < 24 ? ['프론트엔드팀', '백엔드팀', '풀스택팀', 'AI/ML팀', 'DevOps팀', '모바일팀', '아키텍처팀', 'QA팀', '보안팀', '클라우드팀', '데이터팀', '웹팀', '플랫폼팀', '인프라팀', 'API팀', '게임팀', '블록체인팀', 'IoT팀', '시스템아키텍처팀', 'PM팀', 'UI/UX팀', 'R&D팀', '신입개발팀', '개발리드팀'][index] : '관리자',
+      experience: index < 24 ? ['5년', '3년', '7년', '4년', '6년', '3년', '8년', '4년', '5년', '4년', '6년', '3년', '7년', '5년', '4년', '6년', '3년', '5년', '9년', '7년', '4년', '8년', '1년', '10년'][index] : '관리자'
+    }));
+    setEvaluators(convertedEvaluators);
+  }, [projectId]);
 
   const [newEvaluator, setNewEvaluator] = useState({ code: '', name: '', email: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -190,6 +191,20 @@ const EvaluatorAssignment: React.FC<EvaluatorAssignmentProps> = ({ projectId, on
                         </div>
                         {evaluator.email && (
                           <p className="text-sm text-gray-600 mt-1">{evaluator.email}</p>
+                        )}
+                        {(evaluator.department || evaluator.experience) && (
+                          <div className="flex items-center space-x-4 mt-1">
+                            {evaluator.department && (
+                              <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                                {evaluator.department}
+                              </span>
+                            )}
+                            {evaluator.experience && (
+                              <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded">
+                                경력 {evaluator.experience}
+                              </span>
+                            )}
+                          </div>
                         )}
                         {evaluator.inviteLink && (
                           <div className="mt-2">

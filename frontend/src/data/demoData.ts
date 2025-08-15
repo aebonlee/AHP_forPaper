@@ -281,12 +281,12 @@ export const DEMO_COMPARISONS = [
   { criterion1_id: 'sub-criteria-3-1', criterion2_id: 'sub-criteria-3-3', value: 0.757862827, project_id: 'demo-project-1', criterion_id: 'criteria-3' }
 ];
 
-// 평가자별 데이터 (26명)
+// 평가자별 데이터 (26명) - 실제 한국 이름 사용
 export const DEMO_EVALUATORS = [
   {
     id: 'p001',
-    name: '평가자 1',
-    email: 'evaluator1@company.com',
+    name: '김민수',
+    email: 'kim.minsu@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -312,8 +312,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p002',
-    name: '평가자 2',
-    email: 'evaluator2@company.com',
+    name: '이지영',
+    email: 'lee.jiyoung@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -339,8 +339,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p003',
-    name: '평가자 3',
-    email: 'evaluator3@company.com',
+    name: '박성호',
+    email: 'park.seongho@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -366,8 +366,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p004',
-    name: '평가자 4',
-    email: 'evaluator4@company.com',
+    name: '최현우',
+    email: 'choi.hyeonwoo@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -393,8 +393,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p005',
-    name: '평가자 5',
-    email: 'evaluator5@company.com',
+    name: '정수연',
+    email: 'jung.suyeon@aidev-company.com',
     status: 'in_progress',
     progress: 100,
     weights: {
@@ -420,8 +420,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p006',
-    name: '평가자 6',
-    email: 'evaluator6@company.com',
+    name: '강도현',
+    email: 'kang.dohyeon@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -447,8 +447,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p007',
-    name: '평가자 7',
-    email: 'evaluator7@company.com',
+    name: '윤서영',
+    email: 'yoon.seoyoung@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -474,8 +474,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p008',
-    name: '평가자 8',
-    email: 'evaluator8@company.com',
+    name: '장민준',
+    email: 'jang.minjun@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -501,8 +501,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p009',
-    name: '평가자 9',
-    email: 'evaluator9@company.com',
+    name: '임소희',
+    email: 'lim.sohee@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -528,8 +528,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p010',
-    name: '평가자 10',
-    email: 'evaluator10@company.com',
+    name: '한재훈',
+    email: 'han.jaehoon@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -555,8 +555,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p011',
-    name: '평가자 11',
-    email: 'evaluator11@company.com',
+    name: '오혜진',
+    email: 'oh.hyejin@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -582,8 +582,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p012',
-    name: '평가자 12',
-    email: 'evaluator12@company.com',
+    name: '신동윤',
+    email: 'shin.dongyoon@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -609,8 +609,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p013',
-    name: '평가자 13',
-    email: 'evaluator13@company.com',
+    name: '배수진',
+    email: 'bae.sujin@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -636,8 +636,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p014',
-    name: '평가자 14',
-    email: 'evaluator14@company.com',
+    name: '권민식',
+    email: 'kwon.minsik@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -663,8 +663,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p015',
-    name: '평가자 15',
-    email: 'evaluator15@company.com',
+    name: '노유정',
+    email: 'noyoojung@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -690,8 +690,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p016',
-    name: '평가자 16',
-    email: 'evaluator16@company.com',
+    name: '송태현',
+    email: 'song.taehyeon@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -717,8 +717,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p017',
-    name: '평가자 17',
-    email: 'evaluator17@company.com',
+    name: '홍지은',
+    email: 'hong.jieun@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -744,8 +744,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p018',
-    name: '평가자 18',
-    email: 'evaluator18@company.com',
+    name: '조민서',
+    email: 'cho.minseo@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -771,8 +771,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p019',
-    name: '평가자 19',
-    email: 'evaluator19@company.com',
+    name: '유상훈',
+    email: 'yoo.sanghoon@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -798,8 +798,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p020',
-    name: '평가자 20',
-    email: 'evaluator20@company.com',
+    name: '서혜림',
+    email: 'seo.hyerim@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -825,8 +825,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p021',
-    name: '평가자 21',
-    email: 'evaluator21@company.com',
+    name: '전영준',
+    email: 'jeon.yeongjun@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -852,8 +852,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p022',
-    name: '평가자 22',
-    email: 'evaluator22@company.com',
+    name: '문지원',
+    email: 'moon.jiwon@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -879,8 +879,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p023',
-    name: '평가자 23',
-    email: 'evaluator23@company.com',
+    name: '안준호',
+    email: 'ahn.junho@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -906,8 +906,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p024',
-    name: '평가자 24',
-    email: 'evaluator24@company.com',
+    name: '구민정',
+    email: 'koo.minjung@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
@@ -933,8 +933,8 @@ export const DEMO_EVALUATORS = [
   },
   {
     id: 'p025',
-    name: '평가자 25',
-    email: 'evaluator25@company.com',
+    name: '류성민',
+    email: 'ryu.seongmin@aidev-company.com',
     status: 'completed',
     progress: 100,
     weights: {
