@@ -54,7 +54,7 @@ const ModelBuilding: React.FC<ModelBuildingProps> = ({
   ];
 
   const handleStepComplete = (stepId: string) => {
-    setCompletedSteps(prev => new Set([...prev, stepId]));
+    setCompletedSteps(prev => new Set([...Array.from(prev), stepId]));
     
     // Auto-advance to next step
     const currentIndex = steps.findIndex(step => step.id === stepId);

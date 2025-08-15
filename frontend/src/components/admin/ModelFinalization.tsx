@@ -171,7 +171,7 @@ const ModelFinalization: React.FC<ModelFinalizationProps> = ({
                 정말로 진행하시겠습니까?
               </p>
               <div className="flex space-x-3">
-                <Button variant="danger" onClick={handleFinalize}>
+                <Button variant="error" onClick={handleFinalize}>
                   확정하고 평가 시작
                 </Button>
                 <Button variant="secondary" onClick={handleCancel}>

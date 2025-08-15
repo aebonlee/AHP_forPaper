@@ -247,7 +247,7 @@ const ProjectCompletion: React.FC<ProjectCompletionProps> = ({
               <div className="flex justify-center space-x-4">
                 <Button
                   onClick={handleExecute}
-                  variant="danger"
+                  variant="error"
                   size="lg"
                 >
                   확인하고 실행

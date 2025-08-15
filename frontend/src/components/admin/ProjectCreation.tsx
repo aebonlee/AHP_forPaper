@@ -7,12 +7,14 @@ interface ProjectCreationProps {
   onProjectCreated: () => void;
   onCancel: () => void;
   loading?: boolean;
+  createProject?: (projectData: { title: string; description: string; objective: string }) => Promise<any>;
 }
 
 const ProjectCreation: React.FC<ProjectCreationProps> = ({ 
   onProjectCreated, 
   onCancel, 
-  loading = false 
+  loading = false,
+  createProject
 }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -52,15 +54,28 @@ const ProjectCreation: React.FC<ProjectCreationProps> = ({
     }
 
     try {
-      // TODO: Implement actual API call
-      console.log('Creating project with data:', formData);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      onProjectCreated();
+      if (createProject) {
+        // 실제 프로젝트 생성 함수 호출
+        await createProject(formData);
+        
+        // 성공 시 폼 초기화
+        setFormData({
+          title: '',
+          description: '',
+          objective: ''
+        });
+        
+        onProjectCreated();
+      } else {
+        // Fallback: 시뮬레이션
+        console.log('Creating project with data:', formData);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        onProjectCreated();
+      }
     } catch (error) {
       console.error('Failed to create project:', error);
+      // 에러 메시지를 사용자에게 표시
+      setErrors({ general: error instanceof Error ? error.message : '프로젝트 생성에 실패했습니다.' });
     }
   };
 
@@ -91,6 +106,12 @@ const ProjectCreation: React.FC<ProjectCreationProps> = ({
       </div>
 
       <Card>
+        {errors.general && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{errors.general}</p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input
             id="title"
