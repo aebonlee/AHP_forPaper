@@ -1,10 +1,9 @@
 /**
  * AHP 계층구조 빌더 컴포넌트
- * 드래그&드롭으로 기준과 대안의 계층 구조를 시각적으로 편집
+ * 네이티브 HTML5 드래그&드롭으로 기준과 대안의 계층 구조를 시각적으로 편집
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 interface HierarchyNode {
   id: string;
@@ -37,6 +36,8 @@ const HierarchyBuilder: React.FC<HierarchyBuilderProps> = ({
   const [hierarchy, setHierarchy] = useState<HierarchyNode[]>(initialHierarchy);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [draggedNode, setDraggedNode] = useState<string | null>(null);
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
   const [newNodeDialog, setNewNodeDialog] = useState<{
     isOpen: boolean;
     parentId: string | null;
@@ -73,24 +74,52 @@ const HierarchyBuilder: React.FC<HierarchyBuilderProps> = ({
     onHierarchyChange(newHierarchy);
   }, [onHierarchyChange]);
 
-  const handleDragEnd = (result: DropResult) => {
+  // 드래그 시작
+  const handleDragStart = (e: React.DragEvent, nodeId: string) => {
     if (readonly) return;
-    
-    const { destination, source, draggableId } = result;
-    
-    if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    setDraggedNode(nodeId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', nodeId);
+  };
 
-    // 새로운 계층구조 생성
-    const newHierarchy = moveNode(hierarchy, draggableId, source, destination);
-    updateHierarchy(newHierarchy);
+  // 드래그 오버
+  const handleDragOver = (e: React.DragEvent, targetId: string) => {
+    if (readonly || !draggedNode) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverTarget(targetId);
+  };
+
+  // 드래그 리브
+  const handleDragLeave = () => {
+    setDragOverTarget(null);
+  };
+
+  // 드롭
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    if (readonly || !draggedNode) return;
+    e.preventDefault();
+    
+    if (draggedNode !== targetId) {
+      // 새로운 계층구조 생성
+      const newHierarchy = moveNode(hierarchy, draggedNode, targetId);
+      updateHierarchy(newHierarchy);
+    }
+    
+    setDraggedNode(null);
+    setDragOverTarget(null);
+  };
+
+  // 드래그 종료
+  const handleDragEnd = () => {
+    setDraggedNode(null);
+    setDragOverTarget(null);
   };
 
   const moveNode = (
     nodes: HierarchyNode[],
     nodeId: string,
-    source: { droppableId: string; index: number },
-    destination: { droppableId: string; index: number }
+    newParentId: string
   ): HierarchyNode[] => {
     const clonedHierarchy = JSON.parse(JSON.stringify(nodes));
     
@@ -99,8 +128,8 @@ const HierarchyBuilder: React.FC<HierarchyBuilderProps> = ({
     if (!movedNode) return nodes;
 
     // 새 위치에 삽입
-    const newParentId = destination.droppableId === 'root' ? null : destination.droppableId;
-    insertNodeAtPosition(clonedHierarchy, movedNode, newParentId, destination.index);
+    const targetParentId = newParentId === 'root' ? null : newParentId;
+    insertNodeAtPosition(clonedHierarchy, movedNode, targetParentId);
 
     // 레벨 업데이트
     updateNodeLevels(clonedHierarchy);
@@ -124,21 +153,20 @@ const HierarchyBuilder: React.FC<HierarchyBuilderProps> = ({
   const insertNodeAtPosition = (
     nodes: HierarchyNode[],
     node: HierarchyNode,
-    parentId: string | null,
-    index: number
+    parentId: string | null
   ) => {
     if (parentId === null) {
       // 루트 레벨에 삽입
       node.parentId = null;
       node.level = 1;
-      nodes.splice(index, 0, node);
+      nodes.push(node);
     } else {
       // 특정 부모 노드의 자식으로 삽입
       const parent = findNodeById(nodes, parentId);
       if (parent) {
         node.parentId = parentId;
         node.level = parent.level + 1;
-        parent.children.splice(index, 0, node);
+        parent.children.push(node);
       }
     }
   };
@@ -227,6 +255,8 @@ const HierarchyBuilder: React.FC<HierarchyBuilderProps> = ({
     const hasChildren = node.children.length > 0;
     const canAddChildren = node.level < maxLevels && node.type === 'criterion';
     const isSelected = selectedNode === node.id;
+    const isDraggedOver = dragOverTarget === node.id;
+    const isDragging = draggedNode === node.id;
 
     const getNodeIcon = () => {
       if (node.type === 'alternative') return '🎯';
@@ -235,6 +265,7 @@ const HierarchyBuilder: React.FC<HierarchyBuilderProps> = ({
     };
 
     const getNodeColor = () => {
+      if (isDraggedOver) return 'border-blue-500 bg-blue-100';
       if (node.type === 'alternative') return 'border-green-300 bg-green-50';
       if (node.level === 1) return 'border-blue-300 bg-blue-50';
       if (node.level === 2) return 'border-purple-300 bg-purple-50';
@@ -242,170 +273,155 @@ const HierarchyBuilder: React.FC<HierarchyBuilderProps> = ({
     };
 
     return (
-      <Draggable key={node.id} draggableId={node.id} index={index} isDragDisabled={readonly}>
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.draggableProps}
-            className={`mb-2 ${node.level > 1 ? 'ml-8' : ''}`}
-          >
-            {/* 노드 카드 */}
-            <div
-              className={`border-2 rounded-lg p-3 transition-all duration-200 ${
-                snapshot.isDragging
-                  ? 'shadow-lg rotate-2 scale-105'
-                  : isSelected
-                  ? 'shadow-md border-blue-500'
-                  : 'hover:shadow-sm'
-              } ${getNodeColor()}`}
-              onClick={() => setSelectedNode(isSelected ? null : node.id)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3 flex-1">
-                  {/* 드래그 핸들 */}
-                  <div
-                    {...provided.dragHandleProps}
-                    className={`cursor-grab active:cursor-grabbing p-1 rounded hover:bg-white hover:bg-opacity-50 ${
-                      readonly ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    ⋮⋮
-                  </div>
+      <div
+        key={node.id}
+        className={`mb-2 ${node.level > 1 ? 'ml-8' : ''} ${isDragging ? 'opacity-50' : ''}`}
+        onDragOver={(e) => handleDragOver(e, node.id)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, node.id)}
+      >
+        {/* 노드 카드 */}
+        <div
+          draggable={!readonly}
+          onDragStart={(e) => handleDragStart(e, node.id)}
+          onDragEnd={handleDragEnd}
+          className={`border-2 rounded-lg p-3 transition-all duration-200 cursor-grab active:cursor-grabbing ${
+            isSelected
+              ? 'shadow-md border-blue-500'
+              : 'hover:shadow-sm'
+          } ${getNodeColor()}`}
+          onClick={() => setSelectedNode(isSelected ? null : node.id)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 flex-1">
+              {/* 드래그 핸들 */}
+              <div
+                className={`p-1 rounded hover:bg-white hover:bg-opacity-50 ${
+                  readonly ? 'opacity-50 cursor-not-allowed' : 'cursor-grab'
+                }`}
+              >
+                ⋮⋮
+              </div>
 
-                  {/* 확장/축소 버튼 */}
-                  {hasChildren && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleExpanded(node.id);
-                      }}
-                      className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white hover:bg-opacity-50"
-                    >
-                      {isExpanded ? '−' : '+'}
-                    </button>
-                  )}
+              {/* 확장/축소 버튼 */}
+              {hasChildren && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleExpanded(node.id);
+                  }}
+                  className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white hover:bg-opacity-50"
+                >
+                  {isExpanded ? '−' : '+'}
+                </button>
+              )}
 
-                  {/* 노드 정보 */}
-                  <div className="flex items-center space-x-2 flex-1">
-                    <span className="text-lg">{getNodeIcon()}</span>
-                    <div>
-                      {node.isEditing ? (
-                        <input
-                          type="text"
-                          value={node.name}
-                          onChange={(e) => updateNode(node.id, { name: e.target.value })}
-                          onBlur={() => updateNode(node.id, { isEditing: false })}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              updateNode(node.id, { isEditing: false });
-                            }
-                          }}
-                          className="bg-white border border-gray-300 rounded px-2 py-1 text-sm"
-                          autoFocus
-                        />
-                      ) : (
-                        <div>
-                          <div className="font-medium text-gray-800">{node.name}</div>
-                          {node.description && (
-                            <div className="text-xs text-gray-600">{node.description}</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 레벨 및 평가방법 표시 */}
-                  <div className="flex items-center space-x-2 text-xs">
-                    <span className="px-2 py-1 bg-white bg-opacity-70 rounded">
-                      L{node.level}
-                    </span>
-                    {node.evalMethod && (
-                      <span className={`px-2 py-1 rounded ${
-                        node.evalMethod === 'pairwise' ? 'bg-blue-200 text-blue-800' : 'bg-green-200 text-green-800'
-                      }`}>
-                        {node.evalMethod === 'pairwise' ? '쌍대비교' : '직접입력'}
-                      </span>
-                    )}
-                    {node.type === 'alternative' && (
-                      <span className="px-2 py-1 bg-green-200 text-green-800 rounded">
-                        대안
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 노드 액션 버튼들 */}
-                {!readonly && (
-                  <div className="flex items-center space-x-1 ml-2">
-                    {canAddChildren && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setNewNodeDialog({
-                            isOpen: true,
-                            parentId: node.id,
-                            type: 'criterion'
-                          });
-                        }}
-                        className="p-1 text-blue-600 hover:bg-blue-100 rounded"
-                        title="하위 기준 추가"
-                      >
-                        ➕
-                      </button>
-                    )}
-                    
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateNode(node.id, { isEditing: true });
-                      }}
-                      className="p-1 text-gray-600 hover:bg-gray-100 rounded"
-                      title="편집"
-                    >
-                      ✏️
-                    </button>
-                    
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm(`"${node.name}"을(를) 삭제하시겠습니까?`)) {
-                          deleteNode(node.id);
+              {/* 노드 정보 */}
+              <div className="flex items-center space-x-2 flex-1">
+                <span className="text-lg">{getNodeIcon()}</span>
+                <div>
+                  {node.isEditing ? (
+                    <input
+                      type="text"
+                      value={node.name}
+                      onChange={(e) => updateNode(node.id, { name: e.target.value })}
+                      onBlur={() => updateNode(node.id, { isEditing: false })}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          updateNode(node.id, { isEditing: false });
                         }
                       }}
-                      className="p-1 text-red-600 hover:bg-red-100 rounded"
-                      title="삭제"
-                    >
-                      🗑️
-                    </button>
-                  </div>
+                      className="bg-white border border-gray-300 rounded px-2 py-1 text-sm"
+                      autoFocus
+                    />
+                  ) : (
+                    <div>
+                      <div className="font-medium text-gray-800">{node.name}</div>
+                      {node.description && (
+                        <div className="text-xs text-gray-600">{node.description}</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 레벨 및 평가방법 표시 */}
+              <div className="flex items-center space-x-2 text-xs">
+                <span className="px-2 py-1 bg-white bg-opacity-70 rounded">
+                  L{node.level}
+                </span>
+                {node.evalMethod && (
+                  <span className={`px-2 py-1 rounded ${
+                    node.evalMethod === 'pairwise' ? 'bg-blue-200 text-blue-800' : 'bg-green-200 text-green-800'
+                  }`}>
+                    {node.evalMethod === 'pairwise' ? '쌍대비교' : '직접입력'}
+                  </span>
+                )}
+                {node.type === 'alternative' && (
+                  <span className="px-2 py-1 bg-green-200 text-green-800 rounded">
+                    대안
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* 자식 노드들 */}
-            {hasChildren && isExpanded && (
-              <Droppable droppableId={node.id} type="node">
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`mt-2 min-h-[20px] rounded-lg border-2 border-dashed transition-colors ${
-                      snapshot.isDraggingOver 
-                        ? 'border-blue-400 bg-blue-50' 
-                        : 'border-transparent'
-                    }`}
+            {/* 노드 액션 버튼들 */}
+            {!readonly && (
+              <div className="flex items-center space-x-1 ml-2">
+                {canAddChildren && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setNewNodeDialog({
+                        isOpen: true,
+                        parentId: node.id,
+                        type: 'criterion'
+                      });
+                    }}
+                    className="p-1 text-blue-600 hover:bg-blue-100 rounded"
+                    title="하위 기준 추가"
                   >
-                    {node.children.map((child, childIndex) =>
-                      renderNode(child, childIndex, node.id)
-                    )}
-                    {provided.placeholder}
-                  </div>
+                    ➕
+                  </button>
                 )}
-              </Droppable>
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateNode(node.id, { isEditing: true });
+                  }}
+                  className="p-1 text-gray-600 hover:bg-gray-100 rounded"
+                  title="편집"
+                >
+                  ✏️
+                </button>
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`"${node.name}"을(를) 삭제하시겠습니까?`)) {
+                      deleteNode(node.id);
+                    }
+                  }}
+                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                  title="삭제"
+                >
+                  🗑️
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 자식 노드들 */}
+        {hasChildren && isExpanded && (
+          <div className="mt-2 ml-4">
+            {node.children.map((child, childIndex) =>
+              renderNode(child, childIndex, node.id)
             )}
           </div>
         )}
-      </Draggable>
+      </div>
     );
   };
 
@@ -448,32 +464,22 @@ const HierarchyBuilder: React.FC<HierarchyBuilderProps> = ({
       </div>
 
       {/* 계층구조 트리 */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="root" type="node">
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`min-h-[200px] p-4 rounded-lg border-2 border-dashed transition-colors ${
-                snapshot.isDraggingOver
-                  ? 'border-blue-400 bg-blue-50'
-                  : 'border-gray-300 bg-gray-50'
-              }`}
-            >
-              {hierarchy.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-2">📋</div>
-                  <p>계층구조가 비어있습니다.</p>
-                  <p className="text-sm">위의 버튼으로 기준이나 대안을 추가하세요.</p>
-                </div>
-              ) : (
-                hierarchy.map((node, index) => renderNode(node, index))
-              )}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <div
+        className="min-h-[200px] p-4 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50"
+        onDragOver={(e) => handleDragOver(e, 'root')}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, 'root')}
+      >
+        {hierarchy.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <div className="text-4xl mb-2">📋</div>
+            <p>계층구조가 비어있습니다.</p>
+            <p className="text-sm">위의 버튼으로 기준이나 대안을 추가하세요.</p>
+          </div>
+        ) : (
+          hierarchy.map((node, index) => renderNode(node, index))
+        )}
+      </div>
 
       {/* 새 노드 추가 다이얼로그 */}
       {newNodeDialog.isOpen && (
