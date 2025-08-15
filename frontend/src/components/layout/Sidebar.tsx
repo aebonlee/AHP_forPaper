@@ -9,10 +9,14 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, activeTab, onTabChange }) => {
   const adminMenuItems = [
-    { id: 'projects', label: 'Projects', icon: '📋' },
-    { id: 'users', label: 'Users', icon: '👥' },
-    { id: 'model-builder', label: 'Model Builder', icon: '🏗️' },
-    { id: 'results', label: 'Results', icon: '📊' }
+    { id: 'landing', label: '시작하기', icon: '🏠' },
+    { id: 'projects', label: '프로젝트', icon: '📋' },
+    { id: 'project-creation', label: '프로젝트 생성', icon: '➕' },
+    { id: 'model-building', label: '모델 구축', icon: '🏗️' },
+    { id: 'evaluation-results', label: '평가 결과', icon: '📊' },
+    { id: 'project-completion', label: '프로젝트 완료', icon: '✅' },
+    { id: 'users', label: '사용자 관리', icon: '👥' },
+    { id: 'results', label: '기존 결과', icon: '📈' }
   ];
 
   const evaluatorMenuItems = [

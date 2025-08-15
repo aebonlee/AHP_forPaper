@@ -5,6 +5,11 @@ import Card from './components/common/Card';
 import ModelBuilder from './components/model/ModelBuilder';
 import PairwiseComparison from './components/comparison/PairwiseComparison';
 import ResultsDashboard from './components/results/ResultsDashboard';
+import LandingPage from './components/admin/LandingPage';
+import ProjectCreation from './components/admin/ProjectCreation';
+import ModelBuilding from './components/admin/ModelBuilding';
+import EvaluationResults from './components/admin/EvaluationResults';
+import ProjectCompletion from './components/admin/ProjectCompletion';
 import { API_BASE_URL } from './config/api';
 import { 
   DEMO_USER, 
@@ -21,13 +26,14 @@ function App() {
     last_name: string;
     role: 'admin' | 'evaluator';
   } | null>(null);
-  const [activeTab, setActiveTab] = useState('projects');
+  const [activeTab, setActiveTab] = useState('landing');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [projects, setProjects] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>('');
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [backendStatus, setBackendStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
 
@@ -135,7 +141,9 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     setUser(null);
-    setActiveTab('projects');
+    setActiveTab('landing');
+    setSelectedProjectId(null);
+    setSelectedProjectTitle('');
   };
 
   const fetchProjects = async () => {
@@ -210,6 +218,35 @@ function App() {
     }
   };
 
+  // New admin workflow handlers
+  const handleGetStarted = () => {
+    setActiveTab('projects');
+  };
+
+  const handleProjectCreated = () => {
+    setActiveTab('model-building');
+  };
+
+  const handleModelFinalized = () => {
+    setActiveTab('evaluation-results');
+  };
+
+  const handleEvaluationComplete = () => {
+    setActiveTab('project-completion');
+  };
+
+  const handleProjectStatusChange = (status: 'terminated' | 'completed') => {
+    console.log(`Project ${selectedProjectId} status changed to: ${status}`);
+    setActiveTab('projects');
+    setSelectedProjectId(null);
+    setSelectedProjectTitle('');
+  };
+
+  const handleProjectSelect = (projectId: string, projectTitle: string) => {
+    setSelectedProjectId(projectId);
+    setSelectedProjectTitle(projectTitle);
+  };
+
   useEffect(() => {
     if (user && activeTab === 'projects') {
       fetchProjects();
@@ -269,6 +306,97 @@ function App() {
     }
 
     switch (activeTab) {
+      case 'landing':
+        return (
+          <LandingPage 
+            user={user}
+            onGetStarted={handleGetStarted}
+          />
+        );
+
+      case 'project-creation':
+        return (
+          <ProjectCreation
+            onProjectCreated={handleProjectCreated}
+            onCancel={() => setActiveTab('projects')}
+          />
+        );
+
+      case 'model-building':
+        if (!selectedProjectId) {
+          return (
+            <Card title="모델 구축">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 먼저 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 목록으로 이동
+                </button>
+              </div>
+            </Card>
+          );
+        }
+        return (
+          <ModelBuilding
+            projectId={selectedProjectId}
+            projectTitle={selectedProjectTitle}
+            onModelFinalized={handleModelFinalized}
+            onBack={() => setActiveTab('projects')}
+          />
+        );
+
+      case 'evaluation-results':
+        if (!selectedProjectId) {
+          return (
+            <Card title="평가 결과">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 먼저 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 목록으로 이동
+                </button>
+              </div>
+            </Card>
+          );
+        }
+        return (
+          <EvaluationResults
+            projectId={selectedProjectId}
+            projectTitle={selectedProjectTitle}
+            onBack={() => setActiveTab('model-building')}
+            onComplete={handleEvaluationComplete}
+          />
+        );
+
+      case 'project-completion':
+        if (!selectedProjectId) {
+          return (
+            <Card title="프로젝트 완료">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 먼저 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('projects')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 목록으로 이동
+                </button>
+              </div>
+            </Card>
+          );
+        }
+        return (
+          <ProjectCompletion
+            projectId={selectedProjectId}
+            projectTitle={selectedProjectTitle}
+            onBack={() => setActiveTab('evaluation-results')}
+            onProjectStatusChange={handleProjectStatusChange}
+          />
+        );
+
       case 'projects':
         return (
           <Card title="프로젝트 관리">
@@ -278,12 +406,20 @@ function App() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <h4 className="font-medium">내 프로젝트 ({projects.length}개)</h4>
-                  <button
-                    onClick={createSampleProject}
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  >
-                    샘플 프로젝트 생성
-                  </button>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setActiveTab('project-creation')}
+                      className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                    >
+                      새 프로젝트 생성
+                    </button>
+                    <button
+                      onClick={createSampleProject}
+                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    >
+                      샘플 프로젝트 생성
+                    </button>
+                  </div>
                 </div>
                 
                 {projects.length === 0 ? (
@@ -303,8 +439,8 @@ function App() {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => {
-                                setSelectedProjectId(project.id);
-                                setActiveTab('model-builder');
+                                handleProjectSelect(project.id, project.title);
+                                setActiveTab('model-building');
                               }}
                               className="text-xs bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                             >
