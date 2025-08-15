@@ -1,4 +1,4 @@
-// Demo data for GitHub Pages deployment - AI 개발 활용 방안 AHP 분석
+// Complete AHP Demo Data - AI 개발 활용 방안 AHP 분석 (26명 평가자, 완전한 모델 구축)
 export const DEMO_USER = {
   id: 'demo-user-1',
   first_name: 'Demo',
@@ -14,11 +14,20 @@ export const DEMO_PROJECTS = [
     description: '개발 과정에서 AI 도구 활용의 우선순위를 결정하기 위한 AHP 분석',
     objective: 'AI 기반 개발 도구의 효과적인 활용 전략 수립',
     admin_id: 'demo-user-1',
-    status: 'active',
+    status: 'evaluation_in_progress', // 평가 진행 중 상태
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-15T00:00:00Z',
     evaluator_count: 26,
-    admin_name: 'Demo User'
+    admin_name: 'Demo User',
+    // 모델 구축 단계 정보
+    model_building_status: {
+      step1_project_setup: true,
+      step2_criteria_setup: true,
+      step3_alternatives_setup: true,
+      step4_evaluator_assignment: true,
+      current_step: 'evaluation_phase',
+      completion_percentage: 85
+    }
   }
 ];
 
@@ -1008,6 +1017,117 @@ export const DEMO_INTEGRATED_RESULTS = {
     in_progress: 1,
     progress_percentage: 100.0
   }
+};
+
+// 평가자 배정 정보 (26명 평가자 완전 배정)
+export const DEMO_EVALUATOR_ASSIGNMENTS = [
+  { id: 'p001', name: '김개발', department: '프론트엔드팀', experience: '5년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p002', name: '이프로', department: '백엔드팀', experience: '3년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p003', name: '박풀스택', department: '풀스택팀', experience: '7년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p004', name: '최AI', department: 'AI/ML팀', experience: '4년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p005', name: '정데브옵스', department: 'DevOps팀', experience: '6년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p006', name: '한모바일', department: '모바일팀', experience: '3년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p007', name: '윤시니어', department: '아키텍처팀', experience: '8년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p008', name: '강테스터', department: 'QA팀', experience: '4년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p009', name: '조보안', department: '보안팀', experience: '5년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p010', name: '신클라우드', department: '클라우드팀', experience: '4년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p011', name: '문데이터', department: '데이터팀', experience: '6년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p012', name: '서웹', department: '웹팀', experience: '3년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p013', name: '유플랫폼', department: '플랫폼팀', experience: '7년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p014', name: '남인프라', department: '인프라팀', experience: '5년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p015', name: '배API', department: 'API팀', experience: '4년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p016', name: '임게임', department: '게임팀', experience: '6년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p017', name: '황블록체인', department: '블록체인팀', experience: '3년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p018', name: '송IoT', department: 'IoT팀', experience: '5년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p019', name: '전아키텍트', department: '시스템아키텍처팀', experience: '9년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p020', name: '홍PM', department: 'PM팀', experience: '7년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p021', name: '김UI', department: 'UI/UX팀', experience: '4년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p022', name: '이RnD', department: 'R&D팀', experience: '8년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p023', name: '박신입', department: '신입개발팀', experience: '1년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p024', name: '최리드', department: '개발리드팀', experience: '10년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'p025', name: '정CTO', department: '경영진', experience: '15년', assigned_date: '2024-01-01', status: 'completed' },
+  { id: 'admin', name: 'Demo User', department: '관리자', experience: '관리자', assigned_date: '2024-01-01', status: 'completed' }
+];
+
+// 모델 구축 단계별 상세 정보
+export const DEMO_MODEL_BUILDING_STEPS = {
+  step1_project_setup: {
+    completed: true,
+    title: '프로젝트 설정',
+    description: 'AI 개발 활용 방안 중요도 분석 프로젝트 설정 완료',
+    completion_date: '2024-01-01',
+    details: {
+      project_title: '소프트웨어 개발자의 AI 활용 방안 중요도 분석',
+      methodology: 'AHP (Analytic Hierarchy Process)',
+      scope: '소프트웨어 개발 과정에서 AI 도구 활용 우선순위 결정',
+      duration: '2024년 1월 ~ 2024년 2월'
+    }
+  },
+  step2_criteria_setup: {
+    completed: true,
+    title: '기준 설정',
+    description: '3개 상위기준, 9개 세부기준 계층구조 설정 완료',
+    completion_date: '2024-01-02',
+    details: {
+      level1_criteria: 3,
+      level2_criteria: 9,
+      hierarchy_depth: 2,
+      evaluation_method: 'pairwise_comparison'
+    }
+  },
+  step3_alternatives_setup: {
+    completed: true,
+    title: '대안 설정',
+    description: 'AI 개발 도구 활용 방안 9개 대안 정의 완료',
+    completion_date: '2024-01-03',
+    details: {
+      total_alternatives: 9,
+      categories: ['생산성', '품질', '자동화'],
+      evaluation_scope: 'AI 도구 활용 효과성'
+    }
+  },
+  step4_evaluator_assignment: {
+    completed: true,
+    title: '평가자 배정',
+    description: '26명 평가자 배정 및 초대 완료',
+    completion_date: '2024-01-05',
+    details: {
+      total_evaluators: 26,
+      departments: 20,
+      experience_range: '1년 ~ 15년',
+      invitation_method: 'email_link'
+    }
+  },
+  evaluation_phase: {
+    completed: false,
+    title: '평가 진행',
+    description: '평가자별 쌍대비교 평가 진행 중 (85% 완료)',
+    current_progress: 85,
+    details: {
+      completed_evaluators: 25,
+      remaining_evaluators: 1,
+      estimated_completion: '2024-01-15'
+    }
+  }
+};
+
+// 워크플로우 진행 상황
+export const DEMO_WORKFLOW_STATUS = {
+  current_phase: 'evaluation',
+  overall_progress: 85,
+  phases: [
+    { name: 'project_setup', status: 'completed', progress: 100 },
+    { name: 'model_building', status: 'completed', progress: 100 },
+    { name: 'evaluator_assignment', status: 'completed', progress: 100 },
+    { name: 'evaluation', status: 'in_progress', progress: 85 },
+    { name: 'analysis', status: 'pending', progress: 0 },
+    { name: 'completion', status: 'pending', progress: 0 }
+  ],
+  next_actions: [
+    '평가자 p025 평가 완료 대기',
+    '일관성 검증 결과 확인',
+    '최종 결과 분석 준비'
+  ]
 };
 
 export const DEMO_LOGIN_CREDENTIALS = {
