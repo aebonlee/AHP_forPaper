@@ -66,7 +66,7 @@ const WorkshopVerification: React.FC<WorkshopVerificationProps> = ({
         evaluatorView: {
           ...prev.evaluatorView,
           isBlocked: prev.isActive, // 반전: 활성화되면 차단 해제
-          syncStatus: !prev.isActive ? 'synced' : 'disconnected' as const
+          syncStatus: (!prev.isActive ? 'synced' : 'disconnected') as 'synced' | 'syncing' | 'disconnected'
         }
       };
       
@@ -100,7 +100,7 @@ const WorkshopVerification: React.FC<WorkshopVerificationProps> = ({
         evaluatorView: {
           ...prev.evaluatorView,
           currentScreen: `RATER-${newStep.split('-')[1].toUpperCase()}`,
-          syncStatus: 'syncing' as const
+          syncStatus: 'syncing' as 'synced' | 'syncing' | 'disconnected'
         }
       };
 
@@ -135,7 +135,7 @@ const WorkshopVerification: React.FC<WorkshopVerificationProps> = ({
         },
         evaluatorView: {
           ...prev.evaluatorView,
-          syncStatus: newSyncEnabled ? 'synced' : 'disconnected' as const
+          syncStatus: (newSyncEnabled ? 'synced' : 'disconnected') as 'synced' | 'syncing' | 'disconnected'
         }
       };
 

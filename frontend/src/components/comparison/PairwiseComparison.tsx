@@ -254,7 +254,6 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
   };
 
   const consistencyRatio = calculateConsistencyRatio();
-  const showCRWarning = isComplete && consistencyRatio > 0.1;
 
   // 데모 모드에서는 간단한 인터페이스 표시
   if (demoMode) {
@@ -335,6 +334,7 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
   const completedCount = getCompletedCount();
   const totalPairs = pairs.length;
   const isComplete = completedCount === totalPairs;
+  const showCRWarning = isComplete && consistencyRatio > 0.1;
 
   return (
     <div className="space-y-6">

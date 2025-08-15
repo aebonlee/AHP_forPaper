@@ -25,7 +25,10 @@ const CaptureVerificationDashboard: React.FC = () => {
   ]);
 
   const [checkedLabels, setCheckedLabels] = useState<Record<string, boolean>>({});
-  const [workshopStates, setWorkshopStates] = useState({
+  const [workshopStates, setWorkshopStates] = useState<{
+    admin: any;
+    evaluator: any;
+  }>({
     admin: null,
     evaluator: null
   });
