@@ -70,7 +70,7 @@ const PairwiseEvaluation: React.FC<PairwiseEvaluationProps> = ({
         setShowHelper(true);
       }
     }
-  }, [currentMatrix?.values, currentMatrixIndex]);
+  }, [currentMatrix?.values, currentMatrix, currentMatrixIndex]);
 
   const calculateConsistencyRatio = (values: number[][]): number => {
     // 실제 CR 계산 로직 구현 (간략화된 버전)

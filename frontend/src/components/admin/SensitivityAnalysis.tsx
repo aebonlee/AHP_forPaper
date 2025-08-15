@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import ScreenID from '../common/ScreenID';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+// LineChart, Line - 현재 미사용
 import { MESSAGES } from '../../constants/messages';
 import { SCREEN_IDS } from '../../constants/screenIds';
 

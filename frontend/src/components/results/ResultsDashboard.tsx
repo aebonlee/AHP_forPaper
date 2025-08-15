@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+// Legend - 현재 미사용
 import Card from '../common/Card';
 import { 
   calculateAHP, 
@@ -107,6 +108,7 @@ const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ projectId, projectT
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, demoMode]);
 
   const calculateResults = useCallback(() => {

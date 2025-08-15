@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Card from '../common/Card';
 import ScreenID from '../common/ScreenID';
-import { DEMO_COMPARISONS } from '../../data/demoData';
+// import { DEMO_COMPARISONS } from '../../data/demoData'; // 현재 미사용
 import { MESSAGES } from '../../constants/messages';
 import { SCREEN_IDS } from '../../constants/screenIds';
 
@@ -128,6 +128,7 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, criterionId, elementType]);
 
   useEffect(() => {

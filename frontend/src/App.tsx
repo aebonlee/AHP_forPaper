@@ -20,8 +20,8 @@ import {
   DEMO_PROJECTS, 
   DEMO_CRITERIA,
   DEMO_ALTERNATIVES,
-  DEMO_LOGIN_CREDENTIALS, 
-  isBackendAvailable 
+  DEMO_LOGIN_CREDENTIALS
+  // isBackendAvailable - 현재 미사용 (데모 모드 강제 활성화)
 } from './data/demoData';
 
 function App() {
@@ -38,6 +38,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>('');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedEvaluationMethod, setSelectedEvaluationMethod] = useState<'pairwise' | 'direct'>('pairwise');
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [backendStatus, setBackendStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
@@ -93,27 +94,28 @@ function App() {
   //   }
   // };
 
-  const validateToken = async (token: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-      } else {
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-      }
-    } catch (error) {
-      console.error('Token validation failed:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-    }
-  };
+  // validateToken - 현재 데모 모드에서 미사용
+  // const validateToken = async (token: string) => {
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //       },
+  //     });
+  //     
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setUser(data.user);
+  //     } else {
+  //       localStorage.removeItem('token');
+  //       localStorage.removeItem('refreshToken');
+  //     }
+  //   } catch (error) {
+  //     console.error('Token validation failed:', error);
+  //     localStorage.removeItem('token');
+  //     localStorage.removeItem('refreshToken');
+  //   }
+  // };
 
   const handleLogin = async (email: string, password: string) => {
     setLoginLoading(true);
@@ -160,7 +162,7 @@ function App() {
     }
   }, [user]);
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     if (isDemoMode) {
       // 데모 모드에서는 이미 로드된 DEMO_PROJECTS 유지
       console.log('데모 모드: 샘플 프로젝트 데이터 사용 중');
@@ -187,7 +189,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isDemoMode]);
 
   const fetchUsers = useCallback(async () => {
     if (isDemoMode) {
@@ -247,7 +249,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, [isDemoMode, API_BASE_URL]);
+  }, [isDemoMode]);
 
   // 사용자 관리 함수들
   const createUser = async (userData: any) => {
@@ -494,7 +496,7 @@ function App() {
     } else if (user && activeTab === 'users' && user.role === 'admin') {
       fetchUsers();
     }
-  }, [user, activeTab, isDemoMode]);
+  }, [user, activeTab, isDemoMode, fetchProjects, fetchUsers]);
 
   const renderDemoNotice = () => (
     <div className={`mb-6 border rounded-lg p-4 ${
