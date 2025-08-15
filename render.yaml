@@ -1,29 +1,12 @@
 services:
   - type: web
-    name: ahp-forpaper
+    name: ahp-backend
     env: node
-    plan: starter
-    region: oregon
-    buildCommand: cd backend && npm install && npm run build
-    startCommand: cd backend && npm start
-    healthCheckPath: /api/health
+    buildCommand: npm install
+    startCommand: node server.js
+    plan: free
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
-      - key: DATABASE_URL
-        fromDatabase:
-          name: ahp-postgres
-          property: connectionString
-      - key: JWT_SECRET
         generateValue: true
-      - key: CORS_ORIGIN
-        value: https://aebonlee.github.io
-
-databases:
-  - name: ahp-postgres
-    databaseName: ahp_db
-    user: ahp_user
-    plan: starter
-    region: oregon
