@@ -44,9 +44,20 @@ function App() {
   const [projectCreationLoading, setProjectCreationLoading] = useState(false);
 
   useEffect(() => {
-    // 페이지 로드 시 백엔드 상태 확인 후 토큰 확인
-    checkBackendAndInitialize();
+    // 프리 요금제를 위한 강제 데모 모드 활성화 
+    // 프로젝트 완료 후 요금제 변경 시 이 부분을 주석 해제: checkBackendAndInitialize();
+    activateDemoMode();
   }, []);
+
+  const activateDemoMode = () => {
+    console.log('🎯 데모 모드 강제 활성화 - AI 개발 활용 방안 AHP 분석');
+    setBackendStatus('unavailable');
+    setIsDemoMode(true);
+    setUser(DEMO_USER);
+    setProjects(DEMO_PROJECTS);
+    setSelectedProjectId(DEMO_PROJECTS[0].id);
+    setActiveTab('landing');
+  };
 
   const checkBackendAndInitialize = async () => {
     try {
@@ -106,35 +117,18 @@ function App() {
     setLoginError('');
 
     try {
-      // 데모 모드에서는 데모 크리덴셜로 바로 로그인
-      if (isDemoMode) {
-        if (email === DEMO_LOGIN_CREDENTIALS.email && password === DEMO_LOGIN_CREDENTIALS.password) {
-          setUser(DEMO_USER);
-          setProjects(DEMO_PROJECTS);
-          setSelectedProjectId(DEMO_PROJECTS[0].id);
-        } else {
-          throw new Error('데모 모드: admin@ahp-system.com / password123을 사용하세요');
-        }
+      // 프리 요금제용 - 항상 데모 크리덴셜로 로그인 (백엔드 미사용)
+      if (email === DEMO_LOGIN_CREDENTIALS.email && password === DEMO_LOGIN_CREDENTIALS.password) {
+        setUser(DEMO_USER);
+        setProjects(DEMO_PROJECTS);
+        setSelectedProjectId(DEMO_PROJECTS[0].id);
+        console.log('✅ AI 개발 활용 AHP 데이터 로드 완료');
         return;
+      } else {
+        throw new Error('데모 계정: admin@ahp-system.com / password123');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      setUser(data.user);
+      // 백엔드 호출 부분은 프로덕션 요금제 사용 시 활성화
       
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : 'Login failed');
@@ -516,10 +510,11 @@ function App() {
           </>
         ) : (
           <>
-            <div><strong>상태:</strong> 백엔드 서버 배포 대기 중 (Render.com)</div>
+            <div><strong>상태:</strong> Render 프리 요금제 - 고정 샘플 데이터 모드</div>
             <div><strong>데모 계정:</strong> admin@ahp-system.com / password123</div>
-            <div><strong>기능:</strong> 샘플 데이터로 UI 미리보기, 모든 AHP 기능 체험 가능</div>
-            <div><strong>참고:</strong> 데이터는 저장되지 않으며, 새로고침 시 초기화됩니다</div>
+            <div><strong>샘플 데이터:</strong> "소프트웨어 개발자의 AI 활용 방안 중요도 분석"</div>
+            <div><strong>기능:</strong> 완전한 AHP 기능 체험, 캡처 검증 시스템 포함</div>
+            <div><strong>참고:</strong> 프로덕션 요금제 변경 시 DB 연동 자동 활성화</div>
           </>
         )}
       </div>
