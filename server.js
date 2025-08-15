@@ -129,6 +129,56 @@ function parseRequestBody(req) {
   });
 }
 
+// 프로젝트 다음 단계 안내
+function getNextSteps(project) {
+  const currentStep = project.current_step || 0;
+  
+  switch (currentStep) {
+    case 0:
+      return {
+        step: 1,
+        title: '단계 1: 프로젝트 설정',
+        description: '프로젝트 기본 정보를 설정하세요',
+        url: '/api/admin/step1/project-setup'
+      };
+    case 1:
+      return {
+        step: 2,
+        title: '단계 2: 기준 설정',
+        description: '의사결정 기준을 설정하세요',
+        url: '/api/admin/step2/criteria-setup'
+      };
+    case 2:
+      return {
+        step: 3,
+        title: '단계 3: 대안 설정',
+        description: '평가할 대안들을 설정하세요',
+        url: '/api/admin/step3/alternatives-setup'
+      };
+    case 3:
+      return {
+        step: 4,
+        title: '단계 4: 평가자 설정',
+        description: '프로젝트 평가자들을 설정하세요',
+        url: '/api/admin/step4/evaluators-setup'
+      };
+    case 4:
+      return {
+        step: 'evaluation',
+        title: '평가 진행',
+        description: '평가자들이 쌍대비교를 진행할 수 있습니다',
+        url: '/api/evaluator/step1/project-overview'
+      };
+    default:
+      return {
+        step: 'unknown',
+        title: '알 수 없는 단계',
+        description: '프로젝트 상태를 확인하세요',
+        url: '/api/admin/project-status'
+      };
+  }
+}
+
 const server = http.createServer((req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const path = parsedUrl.pathname;
@@ -420,17 +470,760 @@ const server = http.createServer((req, res) => {
     }));
   }
   else if (path === '/api/comparisons' && req.method === 'POST') {
-    res.writeHead(201);
-    res.end(JSON.stringify({
-      message: 'Comparison created successfully',
-      comparison: {
-        id: Math.floor(Math.random() * 1000),
-        project_id: 1,
+    parseRequestBody(req).then(body => {
+      const { project_id, comparison_type, element_a_id, element_b_id, value, parent_criteria_id } = body;
+      
+      const newComparison = {
+        id: Math.floor(Math.random() * 10000),
+        project_id: project_id || 1,
         evaluator_id: 1,
-        value: 3.0,
-        created_at: new Date().toISOString()
+        parent_criteria_id: parent_criteria_id || null,
+        comparison_type: comparison_type || 'criteria',
+        element_a_id,
+        element_b_id,
+        value: parseFloat(value),
+        consistency_ratio: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // 간단한 일관성 체크 (CR > 0.1 시뮬레이션)
+      const cr = Math.random() * 0.2; // 0 ~ 0.2 랜덤값
+      newComparison.consistency_ratio = cr;
+      
+      res.writeHead(201);
+      res.end(JSON.stringify({
+        message: 'Comparison created successfully',
+        comparison: newComparison,
+        consistency_check: {
+          cr: cr,
+          is_consistent: cr <= 0.1,
+          needs_judgment_helper: cr > 0.1,
+          judgment_helper_message: cr > 0.1 ? '판단 도우미: 일관성이 부족합니다. 비교값을 재검토해주세요.' : null
+        }
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({
+        error: 'Invalid request body',
+        details: error.message
+      }));
+    });
+  }
+  
+  // 관리자 편 - 단계 1: 프로젝트 설정
+  else if (path === '/api/admin/step1/project-setup' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { title, description, objective, methodology } = body;
+      
+      const newProject = {
+        id: nextId++,
+        title: title || '새 프로젝트',
+        description: description || '',
+        objective: objective || '',
+        methodology: methodology || 'ahp',
+        status: 'step1_completed',
+        admin_id: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        current_step: 1,
+        step1_completed: true,
+        step2_completed: false,
+        step3_completed: false,
+        step4_completed: false
+      };
+      
+      projects.push(newProject);
+      
+      res.writeHead(201);
+      res.end(JSON.stringify({
+        message: '단계 1: 프로젝트 설정이 완료되었습니다',
+        project: newProject,
+        next_step: {
+          step: 2,
+          title: '단계 2: 기준 설정',
+          description: '의사결정 기준을 설정해주세요'
+        }
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // 관리자 편 - 단계 2: 기준 설정
+  else if (path === '/api/admin/step2/criteria-setup' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { project_id, criteria_list } = body;
+      
+      // 프로젝트 업데이트
+      const project = projects.find(p => p.id === project_id);
+      if (project) {
+        project.step2_completed = true;
+        project.current_step = 2;
+        project.status = 'step2_completed';
+        project.updated_at = new Date().toISOString();
+      }
+      
+      // 기준 추가
+      criteria_list.forEach((criterion, index) => {
+        criteria.push({
+          id: nextCriteriaId++,
+          project_id: project_id,
+          name: criterion.name,
+          description: criterion.description || '',
+          level: criterion.level || 1,
+          parent_id: criterion.parent_id || null,
+          position: index + 1,
+          weight: 0.0
+        });
+      });
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        message: '단계 2: 기준 설정이 완료되었습니다',
+        criteria_count: criteria_list.length,
+        next_step: {
+          step: 3,
+          title: '단계 3: 대안 설정',
+          description: '평가할 대안들을 설정해주세요'
+        }
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // 관리자 편 - 단계 3: 대안 설정
+  else if (path === '/api/admin/step3/alternatives-setup' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { project_id, alternatives_list } = body;
+      
+      // 프로젝트 업데이트
+      const project = projects.find(p => p.id === project_id);
+      if (project) {
+        project.step3_completed = true;
+        project.current_step = 3;
+        project.status = 'step3_completed';
+        project.updated_at = new Date().toISOString();
+      }
+      
+      // 대안 추가
+      alternatives_list.forEach((alternative, index) => {
+        alternatives.push({
+          id: nextAlternativeId++,
+          project_id: project_id,
+          name: alternative.name,
+          description: alternative.description || '',
+          cost: alternative.cost || 0,
+          position: index + 1
+        });
+      });
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        message: '단계 3: 대안 설정이 완료되었습니다',
+        alternatives_count: alternatives_list.length,
+        next_step: {
+          step: 4,
+          title: '단계 4: 평가자 설정',
+          description: '프로젝트에 참여할 평가자들을 설정해주세요'
+        }
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // 관리자 편 - 단계 4: 평가자 설정
+  else if (path === '/api/admin/step4/evaluators-setup' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { project_id, evaluators_list } = body;
+      
+      // 프로젝트 업데이트 (완료 상태)
+      const project = projects.find(p => p.id === project_id);
+      if (project) {
+        project.step4_completed = true;
+        project.current_step = 4;
+        project.status = 'setup_completed';
+        project.updated_at = new Date().toISOString();
+      }
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        message: '단계 4: 평가자 설정이 완료되었습니다',
+        evaluators_count: evaluators_list.length,
+        project_status: 'setup_completed',
+        next_action: {
+          title: '평가 시작',
+          description: '이제 평가자들이 쌍대비교를 진행할 수 있습니다',
+          evaluator_url: '/evaluator/step1'
+        }
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // 관리자 편 - 프로젝트 진행 상태 조회
+  else if (path.startsWith('/api/admin/project-status/') && req.method === 'GET') {
+    const projectId = parseInt(path.split('/')[4]);
+    const project = projects.find(p => p.id === projectId);
+    
+    if (!project) {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'Project not found' }));
+      return;
+    }
+    
+    const projectCriteria = criteria.filter(c => c.project_id === projectId);
+    const projectAlternatives = alternatives.filter(a => a.project_id === projectId);
+    
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      project: project,
+      progress: {
+        current_step: project.current_step || 0,
+        step1_completed: project.step1_completed || false,
+        step2_completed: project.step2_completed || false,
+        step3_completed: project.step3_completed || false,
+        step4_completed: project.step4_completed || false,
+        is_ready_for_evaluation: project.status === 'setup_completed'
+      },
+      data_summary: {
+        criteria_count: projectCriteria.length,
+        alternatives_count: projectAlternatives.length
+      },
+      next_steps: getNextSteps(project)
+    }));
+  }
+  
+  // 평가자 편 - 단계 1: 프로젝트 개요 확인
+  else if (path.startsWith('/api/evaluator/step1/project-overview/') && req.method === 'GET') {
+    const projectId = parseInt(path.split('/')[5]);
+    const project = projects.find(p => p.id === projectId);
+    
+    if (!project || project.status !== 'setup_completed') {
+      res.writeHead(404);
+      res.end(JSON.stringify({ 
+        error: 'Project not found or not ready for evaluation',
+        status: project?.status || 'unknown'
+      }));
+      return;
+    }
+    
+    const projectCriteria = criteria.filter(c => c.project_id === projectId);
+    const projectAlternatives = alternatives.filter(a => a.project_id === projectId);
+    
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      step_title: '단계 1: 프로젝트 개요 확인',
+      project: {
+        id: project.id,
+        title: project.title,
+        description: project.description,
+        objective: project.objective
+      },
+      evaluation_structure: {
+        criteria_count: projectCriteria.length,
+        alternatives_count: projectAlternatives.length,
+        total_comparisons_needed: (projectCriteria.length * (projectCriteria.length - 1)) / 2 + 
+                                 projectCriteria.length * (projectAlternatives.length * (projectAlternatives.length - 1)) / 2
+      },
+      criteria: projectCriteria,
+      alternatives: projectAlternatives,
+      next_action: {
+        title: '단계 2로 이동',
+        description: '쌍대비교/직접입력을 시작합니다',
+        url: `/api/evaluator/step2/comparison-setup/${projectId}`
       }
     }));
+  }
+  
+  // 평가자 편 - 단계 2: 쌍대비교/직접입력 설정
+  else if (path.startsWith('/api/evaluator/step2/comparison-setup/') && req.method === 'GET') {
+    const projectId = parseInt(path.split('/')[5]);
+    const project = projects.find(p => p.id === projectId);
+    
+    if (!project) {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: 'Project not found' }));
+      return;
+    }
+    
+    const projectCriteria = criteria.filter(c => c.project_id === projectId);
+    
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      step_title: '단계 2: 쌍대비교/직접입력',
+      project: {
+        id: project.id,
+        title: project.title
+      },
+      comparison_methods: [
+        {
+          method: 'pairwise',
+          title: '쌍대비교',
+          description: '두 요소씩 비교하여 상대적 중요도 결정',
+          url: `/api/evaluator/step2/pairwise/${projectId}`
+        },
+        {
+          method: 'direct',
+          title: '직접입력',
+          description: '가중치를 직접 입력하여 설정',
+          url: `/api/evaluator/step2/direct-input/${projectId}`
+        }
+      ],
+      criteria: projectCriteria
+    }));
+  }
+  
+  // 평가자 편 - 쌍대비교 진행
+  else if (path.startsWith('/api/evaluator/step2/pairwise/') && req.method === 'GET') {
+    const projectId = parseInt(path.split('/')[5]);
+    const projectCriteria = criteria.filter(c => c.project_id === projectId);
+    
+    // 쌍대비교 매트릭스 생성
+    const pairwiseMatrix = [];
+    for (let i = 0; i < projectCriteria.length; i++) {
+      for (let j = i + 1; j < projectCriteria.length; j++) {
+        pairwiseMatrix.push({
+          comparison_id: `${projectCriteria[i].id}_${projectCriteria[j].id}`,
+          element_a: projectCriteria[i],
+          element_b: projectCriteria[j],
+          scale_values: [
+            { value: 9, label: '9: 극단적으로 더 중요' },
+            { value: 7, label: '7: 매우 강하게 더 중요' },
+            { value: 5, label: '5: 강하게 더 중요' },
+            { value: 3, label: '3: 약간 더 중요' },
+            { value: 1, label: '1: 동등하게 중요' },
+            { value: 1/3, label: '1/3: 약간 덜 중요' },
+            { value: 1/5, label: '1/5: 강하게 덜 중요' },
+            { value: 1/7, label: '1/7: 매우 강하게 덜 중요' },
+            { value: 1/9, label: '1/9: 극단적으로 덜 중요' }
+          ]
+        });
+      }
+    }
+    
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      step_title: '단계 2: 쌍대비교',
+      project_id: projectId,
+      comparison_type: 'criteria',
+      pairwise_comparisons: pairwiseMatrix,
+      instructions: {
+        title: 'Saaty의 9점 척도 사용법',
+        description: '각 쌍대비교에서 두 기준 중 어느 것이 더 중요한지 선택하고 중요도를 설정하세요',
+        cr_threshold: 0.1,
+        cr_warning: 'CR > 0.1 시 판단 도우미가 표시됩니다'
+      }
+    }));
+  }
+  
+  // 평가자 편 - 직접입력 진행
+  else if (path.startsWith('/api/evaluator/step2/direct-input/') && req.method === 'GET') {
+    const projectId = parseInt(path.split('/')[5]);
+    const projectCriteria = criteria.filter(c => c.project_id === projectId);
+    
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      step_title: '단계 2: 직접입력',
+      project_id: projectId,
+      criteria: projectCriteria.map(criterion => ({
+        id: criterion.id,
+        name: criterion.name,
+        description: criterion.description,
+        current_weight: criterion.weight || 0,
+        min_weight: 0,
+        max_weight: 1
+      })),
+      instructions: {
+        title: '가중치 직접 입력',
+        description: '각 기준의 가중치를 0~1 사이 값으로 입력하세요. 전체 합이 1이 되어야 합니다.',
+        validation_rules: [
+          '각 가중치는 0 이상 1 이하여야 합니다',
+          '전체 가중치의 합은 1이어야 합니다',
+          '모든 가중치는 0보다 커야 합니다'
+        ]
+      },
+      utility_functions: {
+        reverse_button: {
+          label: '여기를',
+          description: '역수 계산 버튼 - 비교 값의 역수로 자동 설정',
+          action: 'calculate_reciprocal'
+        },
+        auto_normalize: {
+          label: '자동 정규화',
+          description: '입력된 값들을 자동으로 합이 1이 되도록 조정'
+        }
+      }
+    }));
+  }
+  
+  // 직접입력 - 역수 처리 ('여기를' 버튼)
+  else if (path === '/api/evaluator/direct-input/reciprocal' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { original_value } = body;
+      
+      if (!original_value || original_value === 0) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid original value' }));
+        return;
+      }
+      
+      const reciprocal = 1 / parseFloat(original_value);
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        message: '여기를 버튼 처리 완료',
+        original_value: parseFloat(original_value),
+        reciprocal_value: reciprocal,
+        formatted_reciprocal: Math.round(reciprocal * 1000000) / 1000000, // 소수점 6자리
+        explanation: `${original_value}의 역수는 ${reciprocal}입니다`
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // 직접입력 - 가중치 저장
+  else if (path === '/api/evaluator/direct-input/save-weights' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { project_id, weights } = body;
+      
+      // 가중치 합계 검증
+      const totalWeight = Object.values(weights).reduce((sum, weight) => sum + parseFloat(weight), 0);
+      
+      if (Math.abs(totalWeight - 1.0) > 0.001) {
+        res.writeHead(400);
+        res.end(JSON.stringify({
+          error: '가중치 합계 오류',
+          message: '가중치의 합이 1이 되어야 합니다',
+          current_total: totalWeight,
+          required_total: 1.0
+        }));
+        return;
+      }
+      
+      // 가중치 업데이트
+      Object.entries(weights).forEach(([criteriaId, weight]) => {
+        const criterion = criteria.find(c => c.id === parseInt(criteriaId) && c.project_id === project_id);
+        if (criterion) {
+          criterion.weight = parseFloat(weight);
+        }
+      });
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        message: '가중치가 성공적으로 저장되었습니다',
+        saved_weights: weights,
+        total_weight: totalWeight,
+        validation_passed: true
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // 민감도 분석
+  else if (path.startsWith('/api/analysis/sensitivity/') && req.method === 'GET') {
+    const projectId = parseInt(path.split('/')[4]);
+    const projectCriteria = criteria.filter(c => c.project_id === projectId);
+    const projectAlternatives = alternatives.filter(a => a.project_id === projectId);
+    
+    // 민감도 분석 시뮬레이션 데이터
+    const sensitivityAnalysis = {
+      project_id: projectId,
+      analysis_type: '민감도 분석',
+      base_weights: projectCriteria.map(c => ({
+        criterion_id: c.id,
+        criterion_name: c.name,
+        base_weight: c.weight || (1 / projectCriteria.length)
+      })),
+      sensitivity_results: projectCriteria.map(criterion => ({
+        criterion_id: criterion.id,
+        criterion_name: criterion.name,
+        weight_variations: [
+          { weight_change: -0.2, ranking_change: '순위 변동 없음' },
+          { weight_change: -0.1, ranking_change: '순위 변동 없음' },
+          { weight_change: 0, ranking_change: '기준선' },
+          { weight_change: 0.1, ranking_change: '2위와 3위 순위 변경' },
+          { weight_change: 0.2, ranking_change: '1위와 2위 순위 변경' }
+        ]
+      })),
+      critical_thresholds: [
+        {
+          criterion: projectCriteria[0]?.name || '기준1',
+          threshold: 0.15,
+          description: '이 가중치 이상에서 순위 변화 발생'
+        }
+      ]
+    };
+    
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      title: '민감도 분석',
+      description: '기준 가중치 변화에 따른 대안 순위 변동 분석',
+      analysis: sensitivityAnalysis,
+      interpretation: '가중치 변화가 최종 순위에 미치는 영향을 분석하여 의사결정의 안정성을 평가합니다'
+    }));
+  }
+  
+  // 워크숍 기능
+  else if (path === '/api/workshop/create' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { project_id, workshop_name, participants } = body;
+      
+      const workshop = {
+        id: Math.floor(Math.random() * 10000),
+        project_id,
+        workshop_name: workshop_name || '새 워크숍',
+        participants: participants || [],
+        status: 'active',
+        created_at: new Date().toISOString(),
+        phases: [
+          {
+            phase: 1,
+            title: '문제 정의 및 목표 설정',
+            status: 'pending',
+            estimated_duration: '30분'
+          },
+          {
+            phase: 2,
+            title: '기준 도출 및 구조화',
+            status: 'pending',
+            estimated_duration: '45분'
+          },
+          {
+            phase: 3,
+            title: '대안 식별 및 정의',
+            status: 'pending',
+            estimated_duration: '30분'
+          },
+          {
+            phase: 4,
+            title: '그룹 쌍대비교',
+            status: 'pending',
+            estimated_duration: '60분'
+          },
+          {
+            phase: 5,
+            title: '결과 검토 및 합의',
+            status: 'pending',
+            estimated_duration: '30분'
+          }
+        ]
+      };
+      
+      res.writeHead(201);
+      res.end(JSON.stringify({
+        message: '워크숍이 생성되었습니다',
+        workshop: workshop,
+        next_action: {
+          title: '워크숍 시작',
+          description: '참가자들과 함께 1단계부터 진행하세요',
+          url: `/api/workshop/${workshop.id}/phase/1`
+        }
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // 워크숍 상태 조회
+  else if (path.startsWith('/api/workshop/') && path.endsWith('/status') && req.method === 'GET') {
+    const workshopId = parseInt(path.split('/')[3]);
+    
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      workshop_id: workshopId,
+      title: '워크숍 진행 상황',
+      current_phase: 2,
+      progress_percentage: 40,
+      participants_status: [
+        { name: '참가자 A', status: '진행 중', completed_phases: 2 },
+        { name: '참가자 B', status: '완료', completed_phases: 3 },
+        { name: '참가자 C', status: '대기 중', completed_phases: 1 }
+      ],
+      group_consensus: {
+        criteria_agreement: 85,
+        alternatives_agreement: 92,
+        overall_consensus: 88
+      }
+    }));
+  }
+  
+  // 그룹별 가중치 도출
+  else if (path === '/api/analysis/group-weights' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { project_id, evaluator_weights, method } = body;
+      
+      // 평가자별 가중치 조정
+      const adjustedWeights = evaluator_weights.map(evaluator => ({
+        evaluator_id: evaluator.evaluator_id,
+        evaluator_name: evaluator.evaluator_name || `평가자 ${evaluator.evaluator_id}`,
+        weights: evaluator.weights,
+        influence_factor: evaluator.influence_factor || 1.0,
+        adjusted_weights: Object.fromEntries(
+          Object.entries(evaluator.weights).map(([key, value]) => 
+            [key, value * evaluator.influence_factor]
+          )
+        )
+      }));
+      
+      // 통합 결과 산출 (기하평균 방식)
+      const criteriaIds = Object.keys(adjustedWeights[0]?.weights || {});
+      const integratedWeights = {};
+      
+      criteriaIds.forEach(criteriaId => {
+        const weights = adjustedWeights.map(aw => aw.adjusted_weights[criteriaId] || 0);
+        const geometricMean = Math.pow(
+          weights.reduce((product, weight) => product * (weight || 0.001), 1),
+          1 / weights.length
+        );
+        integratedWeights[criteriaId] = geometricMean;
+      });
+      
+      // 정규화
+      const totalWeight = Object.values(integratedWeights).reduce((sum, weight) => sum + weight, 0);
+      Object.keys(integratedWeights).forEach(key => {
+        integratedWeights[key] = integratedWeights[key] / totalWeight;
+      });
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        title: '그룹별 가중치 도출',
+        method: method || 'geometric_mean',
+        evaluator_count: adjustedWeights.length,
+        individual_results: adjustedWeights,
+        integrated_weights: integratedWeights,
+        consensus_metrics: {
+          agreement_level: 'high',
+          consistency_ratio: 0.08,
+          reliability_score: 0.92
+        },
+        recommendations: [
+          '전체적으로 높은 합의 수준을 보입니다',
+          '개별 평가자 간 가중치 차이가 적어 안정적입니다',
+          '최종 가중치를 의사결정에 적용할 수 있습니다'
+        ]
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // 일부 평가자의 통합 결과 산출
+  else if (path === '/api/analysis/partial-integration' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { project_id, selected_evaluators, integration_method } = body;
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        title: '일부 평가자의 통합 결과 산출',
+        selected_evaluators: selected_evaluators,
+        integration_method: integration_method || 'weighted_average',
+        partial_results: {
+          participant_count: selected_evaluators.length,
+          excluded_count: (evaluatorsTotal || 5) - selected_evaluators.length,
+          integrated_weights: {
+            // 시뮬레이션 데이터
+            criterion_1: 0.45,
+            criterion_2: 0.35,
+            criterion_3: 0.20
+          },
+          ranking_changes: [
+            { alternative: '대안 A', before_rank: 2, after_rank: 1, change: '+1' },
+            { alternative: '대안 B', before_rank: 1, after_rank: 2, change: '-1' },
+            { alternative: '대안 C', before_rank: 3, after_rank: 3, change: '0' }
+          ]
+        },
+        impact_analysis: '선택된 평가자들의 의견만으로도 전체 결과와 유사한 패턴을 보입니다'
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
+  }
+  
+  // Excel 저장 기능
+  else if (path === '/api/export/excel' && req.method === 'POST') {
+    parseRequestBody(req).then(body => {
+      const { project_id, export_options } = body;
+      
+      const project = projects.find(p => p.id === project_id);
+      const projectCriteria = criteria.filter(c => c.project_id === project_id);
+      const projectAlternatives = alternatives.filter(a => a.project_id === project_id);
+      
+      // Excel 파일 내용 구조 (실제로는 바이너리 데이터 생성 필요)
+      const excelStructure = {
+        filename: `AHP_${project?.title || 'Project'}_${new Date().toISOString().split('T')[0]}.xlsx`,
+        sheets: [
+          {
+            name: '프로젝트 개요',
+            data: {
+              project_info: project,
+              criteria_count: projectCriteria.length,
+              alternatives_count: projectAlternatives.length,
+              export_date: new Date().toISOString()
+            }
+          },
+          {
+            name: '기준 및 가중치',
+            data: projectCriteria.map(c => ({
+              순번: c.position,
+              기준명: c.name,
+              설명: c.description,
+              가중치: c.weight || 0,
+              수준: c.level
+            }))
+          },
+          {
+            name: '대안 정보',
+            data: projectAlternatives.map(a => ({
+              순번: a.position,
+              대안명: a.name,
+              설명: a.description,
+              비용: a.cost,
+              최종점수: '계산 필요'
+            }))
+          },
+          {
+            name: '쌍대비교 행렬',
+            data: '쌍대비교 매트릭스 데이터'
+          },
+          {
+            name: '민감도 분석',
+            data: '민감도 분석 결과'
+          }
+        ]
+      };
+      
+      res.writeHead(200);
+      res.end(JSON.stringify({
+        message: 'Excel 저장 준비 완료',
+        download_info: {
+          filename: excelStructure.filename,
+          size_estimate: '약 2.5MB',
+          format: 'Microsoft Excel (.xlsx)',
+          sheets_count: excelStructure.sheets.length
+        },
+        excel_structure: excelStructure,
+        download_url: `/api/export/download/${project_id}/${encodeURIComponent(excelStructure.filename)}`,
+        note: 'Excel 파일 다운로드는 별도 구현이 필요합니다 (바이너리 파일 생성)'
+      }));
+    }).catch(error => {
+      res.writeHead(400);
+      res.end(JSON.stringify({ error: 'Invalid request body' }));
+    });
   }
   else {
     res.writeHead(404);
