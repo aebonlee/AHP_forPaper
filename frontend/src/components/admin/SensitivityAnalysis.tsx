@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 
 interface SensitivityAnalysisProps {
   projectId: string;
+  onBack?: () => void;
 }
 
-const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId }) => {
+const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId, onBack }) => {
   const [selectedCriterion, setSelectedCriterion] = useState('');
   const [selectedSubCriterion, setSelectedSubCriterion] = useState('');
   const [newValue, setNewValue] = useState('');
@@ -86,6 +88,16 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId }) 
     <div className="space-y-6">
       <Card title="서브 기능 2) 민감도 분석">
         <div className="space-y-6">
+          {/* 주의 배지 - 상시 표시 */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <div className="flex items-center">
+              <div className="text-yellow-500 mr-2">⚠️</div>
+              <span className="text-sm text-yellow-800 font-medium">
+                서버 미저장, 캡처 권장
+              </span>
+            </div>
+          </div>
+
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <h4 className="font-medium text-purple-900 mb-2">📊 민감도 분석</h4>
             <p className="text-sm text-purple-700">
@@ -98,14 +110,18 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId }) 
             <div className="flex items-start space-x-3">
               <span className="text-blue-600 text-lg">❓</span>
               <div>
-                <h5 className="font-medium text-blue-900 mb-2">사용 흐름</h5>
-                <ol className="text-sm text-blue-700 space-y-1">
-                  <li><strong>①</strong> 상위기준 선택</li>
-                  <li><strong>②</strong> 변경 기준 클릭</li>
-                  <li><strong>③</strong> 값 입력</li>
-                  <li><strong>④</strong> 분석 시작</li>
-                  <li><strong>⑤</strong> 결과 확인 (서버 미저장·캡처 안내)</li>
+                <h5 className="font-medium text-blue-900 mb-2">📊 민감도 분석 흐름</h5>
+                <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                  <li>민감도 분석 버튼 클릭</li>
+                  <li>변경하려는 기준의 상위기준 선택(예: '실내디자인' 변경 시 상위 '디자인' 클릭)</li>
+                  <li>변경할 기준 클릭</li>
+                  <li>우측에 변경값 입력 칸 표시</li>
+                  <li>분석 시작 클릭</li>
+                  <li>대안 최종 중요도 변화 확인</li>
                 </ol>
+                <p className="text-xs text-blue-600 mt-2">
+                  💡 <strong>결과는 서버에 저장되지 않음</strong> — 사진촬영/캡쳐로 보관하세요.
+                </p>
               </div>
             </div>
           </div>
@@ -224,6 +240,43 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId }) 
           {results && (
             <div className="border-t pt-6">
               <h4 className="font-medium text-gray-900 mb-4">⑤ 분석 결과</h4>
+              
+              {/* Chart Visualization */}
+              <div className="mb-6">
+                <h5 className="font-medium text-gray-800 mb-3">결과 변화 차트</h5>
+                <div className="h-80 bg-white border border-gray-200 rounded-lg p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        {
+                          name: '대안 A',
+                          기존: Math.round(results.original.alternatives[0].score * 100),
+                          변경후: Math.round(results.modified.alternatives[0].score * 100)
+                        },
+                        {
+                          name: '대안 B',
+                          기존: Math.round(results.original.alternatives[1].score * 100),
+                          변경후: Math.round(results.modified.alternatives[1].score * 100)
+                        },
+                        {
+                          name: '대안 C',
+                          기존: Math.round(results.original.alternatives[2].score * 100),
+                          변경후: Math.round(results.modified.alternatives[2].score * 100)
+                        }
+                      ]}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip formatter={(value: any) => [`${value}점`, '']} />
+                      <Legend />
+                      <Bar dataKey="기존" fill="#94a3b8" />
+                      <Bar dataKey="변경후" fill="#3b82f6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Original Results */}

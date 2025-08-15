@@ -68,10 +68,10 @@ const GroupWeightAnalysis: React.FC<GroupWeightAnalysisProps> = ({ projectId }) 
 
   return (
     <div className="space-y-6">
-      <Card title="서브 기능 1) 그룹별 가중치 도출">
+      <Card title="그룹별 가중치 도출">
         <div className="space-y-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">⚖️ 평가자 별 가중치 조정</h4>
+            <h4 className="font-medium text-blue-900 mb-2">⚖️ 평가자 별 가중치 조정 / 일부 평가자의 통합 결과 산출</h4>
             <p className="text-sm text-blue-700">
               완료한 평가자만 통합 계산 대상으로 표시됩니다. 각 평가자의 가중치를 조정하여 
               일부 평가자의 통합 결과를 산출할 수 있습니다.
@@ -219,7 +219,7 @@ const GroupWeightAnalysis: React.FC<GroupWeightAnalysisProps> = ({ projectId }) 
                 <div>
                   <h5 className="font-medium text-yellow-900">📥 결과 저장</h5>
                   <p className="text-sm text-yellow-700 mt-1">
-                    현재 결과는 임시 표시입니다. Excel 파일로 저장하여 보관하세요.
+                    표시된 평가결과는 DB에 저장되지 않으니 Excel 저장 단추로 별도 저장하세요.
                   </p>
                 </div>
                 <Button onClick={exportToExcel} variant="primary">
