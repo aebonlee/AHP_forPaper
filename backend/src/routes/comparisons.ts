@@ -73,13 +73,13 @@ router.get('/:projectId',
       // 비교 타입 필터링
       if (comparison_type) {
         comparisonQuery += ' AND pc.comparison_type = ?';
-        comparisonParams.push(comparison_type);
+        comparisonParams.push(comparison_type as string);
       }
 
       // 부모 기준 필터링
       if (parent_criteria_id) {
         comparisonQuery += ' AND pc.parent_criteria_id = ?';
-        comparisonParams.push(parent_criteria_id);
+        comparisonParams.push(parent_criteria_id as string);
       }
 
       comparisonQuery += ' ORDER BY pc.created_at DESC';

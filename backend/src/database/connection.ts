@@ -99,7 +99,7 @@ if (process.env.DATABASE_URL) {
         )
       `);
 
-      -- 기준(Criteria) 테이블
+      // 기준(Criteria) 테이블
       await query(`
         CREATE TABLE IF NOT EXISTS criteria (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,7 +117,7 @@ if (process.env.DATABASE_URL) {
         )
       `);
 
-      -- 대안(Alternatives) 테이블
+      // 대안(Alternatives) 테이블
       await query(`
         CREATE TABLE IF NOT EXISTS alternatives (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,7 +132,7 @@ if (process.env.DATABASE_URL) {
         )
       `);
 
-      -- 쌍대비교 매트릭스 테이블
+      // 쌍대비교 매트릭스 테이블
       await query(`
         CREATE TABLE IF NOT EXISTS pairwise_comparisons (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -153,7 +153,7 @@ if (process.env.DATABASE_URL) {
         )
       `);
 
-      -- 평가 세션 테이블
+      // 평가 세션 테이블
       await query(`
         CREATE TABLE IF NOT EXISTS evaluation_sessions (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -173,7 +173,7 @@ if (process.env.DATABASE_URL) {
         )
       `);
 
-      -- AHP 계산 결과 테이블
+      // AHP 계산 결과 테이블
       await query(`
         CREATE TABLE IF NOT EXISTS ahp_results (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -191,7 +191,7 @@ if (process.env.DATABASE_URL) {
         )
       `);
 
-      -- 프로젝트 설정 테이블
+      // 프로젝트 설정 테이블
       await query(`
         CREATE TABLE IF NOT EXISTS project_settings (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
