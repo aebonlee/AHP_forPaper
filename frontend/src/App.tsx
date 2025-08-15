@@ -10,6 +10,9 @@ import ProjectCreation from './components/admin/ProjectCreation';
 import ModelBuilding from './components/admin/ModelBuilding';
 import EvaluationResults from './components/admin/EvaluationResults';
 import ProjectCompletion from './components/admin/ProjectCompletion';
+import ProjectSelection from './components/evaluator/ProjectSelection';
+import PairwiseEvaluation from './components/evaluator/PairwiseEvaluation';
+import DirectInputEvaluation from './components/evaluator/DirectInputEvaluation';
 import { API_BASE_URL } from './config/api';
 import { 
   DEMO_USER, 
@@ -34,6 +37,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedProjectTitle, setSelectedProjectTitle] = useState<string>('');
+  const [selectedEvaluationMethod, setSelectedEvaluationMethod] = useState<'pairwise' | 'direct'>('pairwise');
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [backendStatus, setBackendStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
 
@@ -146,6 +150,17 @@ function App() {
     setSelectedProjectTitle('');
   };
 
+  // Set initial tab based on user role
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        setActiveTab('landing');
+      } else if (user.role === 'evaluator') {
+        setActiveTab('evaluator-dashboard');
+      }
+    }
+  }, [user]);
+
   const fetchProjects = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -245,6 +260,25 @@ function App() {
   const handleProjectSelect = (projectId: string, projectTitle: string) => {
     setSelectedProjectId(projectId);
     setSelectedProjectTitle(projectTitle);
+  };
+
+  // Evaluator workflow handlers
+  const handleEvaluatorProjectSelect = (projectId: string, projectTitle: string, evaluationMethod: 'pairwise' | 'direct') => {
+    setSelectedProjectId(projectId);
+    setSelectedProjectTitle(projectTitle);
+    setSelectedEvaluationMethod(evaluationMethod);
+    
+    if (evaluationMethod === 'pairwise') {
+      setActiveTab('pairwise-evaluation');
+    } else {
+      setActiveTab('direct-evaluation');
+    }
+  };
+
+  const handleEvaluationComplete = () => {
+    setActiveTab('evaluator-dashboard');
+    setSelectedProjectId(null);
+    setSelectedProjectTitle('');
   };
 
   useEffect(() => {
@@ -555,6 +589,64 @@ function App() {
           />
         );
         
+      case 'evaluator-dashboard':
+        return (
+          <ProjectSelection
+            evaluatorId={user.first_name + user.last_name}
+            onProjectSelect={handleEvaluatorProjectSelect}
+          />
+        );
+
+      case 'pairwise-evaluation':
+        if (!selectedProjectId) {
+          return (
+            <Card title="쌍대비교 평가">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 먼저 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('evaluator-dashboard')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 선택으로 이동
+                </button>
+              </div>
+            </Card>
+          );
+        }
+        return (
+          <PairwiseEvaluation
+            projectId={selectedProjectId}
+            projectTitle={selectedProjectTitle}
+            onComplete={handleEvaluationComplete}
+            onBack={() => setActiveTab('evaluator-dashboard')}
+          />
+        );
+
+      case 'direct-evaluation':
+        if (!selectedProjectId) {
+          return (
+            <Card title="직접입력 평가">
+              <div className="text-center py-8">
+                <p className="text-gray-500">프로젝트를 먼저 선택해주세요.</p>
+                <button
+                  onClick={() => setActiveTab('evaluator-dashboard')}
+                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  프로젝트 선택으로 이동
+                </button>
+              </div>
+            </Card>
+          );
+        }
+        return (
+          <DirectInputEvaluation
+            projectId={selectedProjectId}
+            projectTitle={selectedProjectTitle}
+            onComplete={handleEvaluationComplete}
+            onBack={() => setActiveTab('evaluator-dashboard')}
+          />
+        );
+
       case 'dashboard':
         return (
           <Card title="평가자 대시보드">

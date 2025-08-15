@@ -20,9 +20,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, activeTab, onT
   ];
 
   const evaluatorMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-    { id: 'evaluations', label: 'Evaluations', icon: '⚖️' },
-    { id: 'progress', label: 'Progress', icon: '📈' }
+    { id: 'evaluator-dashboard', label: '프로젝트 선택', icon: '📋' },
+    { id: 'pairwise-evaluation', label: '쌍대비교 평가', icon: '⚖️' },
+    { id: 'direct-evaluation', label: '직접입력 평가', icon: '📝' },
+    { id: 'dashboard', label: '대시보드', icon: '🏠' },
+    { id: 'progress', label: '진행 현황', icon: '📈' }
   ];
 
   const menuItems = userRole === 'admin' ? adminMenuItems : evaluatorMenuItems;
