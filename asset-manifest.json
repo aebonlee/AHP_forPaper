@@ -1,15 +1,12 @@
 {
   "files": {
-    "main.css": "/AHP_forPaper/static/css/main.6c639be4.css",
-    "main.js": "/AHP_forPaper/static/js/main.3d293cdd.js",
-    "static/js/453.54292a4b.chunk.js": "/AHP_forPaper/static/js/453.54292a4b.chunk.js",
-    "index.html": "/AHP_forPaper/index.html",
-    "main.6c639be4.css.map": "/AHP_forPaper/static/css/main.6c639be4.css.map",
-    "main.3d293cdd.js.map": "/AHP_forPaper/static/js/main.3d293cdd.js.map",
-    "453.54292a4b.chunk.js.map": "/AHP_forPaper/static/js/453.54292a4b.chunk.js.map"
+    "main.css": "/AHP_forPaper/static/css/main.a9da6373.css",
+    "main.js": "/AHP_forPaper/static/js/main.5105c733.js",
+    "static/js/206.2f223b76.chunk.js": "/AHP_forPaper/static/js/206.2f223b76.chunk.js",
+    "index.html": "/AHP_forPaper/index.html"
   },
   "entrypoints": [
-    "static/css/main.6c639be4.css",
-    "static/js/main.3d293cdd.js"
+    "static/css/main.a9da6373.css",
+    "static/js/main.5105c733.js"
   ]
 }
