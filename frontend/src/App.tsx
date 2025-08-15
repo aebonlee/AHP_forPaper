@@ -159,6 +159,12 @@ function App() {
   }, [user]);
 
   const fetchProjects = async () => {
+    if (isDemoMode) {
+      // 데모 모드에서는 이미 로드된 DEMO_PROJECTS 유지
+      console.log('데모 모드: 샘플 프로젝트 데이터 사용 중');
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (!token) return;
 
