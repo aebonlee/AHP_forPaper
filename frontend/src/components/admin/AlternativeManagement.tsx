@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
+import { DEMO_ALTERNATIVES } from '../../data/demoData';
 
 interface Alternative {
   id: string;
   name: string;
   description?: string;
   order: number;
+  weight?: number;
+  rank?: number;
 }
 
 interface AlternativeManagementProps {
@@ -16,11 +19,20 @@ interface AlternativeManagementProps {
 }
 
 const AlternativeManagement: React.FC<AlternativeManagementProps> = ({ projectId, onComplete }) => {
-  const [alternatives, setAlternatives] = useState<Alternative[]>([
-    { id: '1', name: '대안 A', description: '기존 시스템 개선', order: 1 },
-    { id: '2', name: '대안 B', description: '새로운 시스템 도입', order: 2 },
-    { id: '3', name: '대안 C', description: '외부 서비스 활용', order: 3 }
-  ]);
+  const [alternatives, setAlternatives] = useState<Alternative[]>([]);
+
+  useEffect(() => {
+    // 데모 데이터를 컴포넌트 형식으로 변환
+    const convertedAlternatives = DEMO_ALTERNATIVES.map(alt => ({
+      id: alt.id,
+      name: alt.name,
+      description: alt.description,
+      order: alt.order_index,
+      weight: alt.weight,
+      rank: alt.rank
+    }));
+    setAlternatives(convertedAlternatives);
+  }, [projectId]);
 
   const [newAlternative, setNewAlternative] = useState({ name: '', description: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -191,10 +203,28 @@ const AlternativeManagement: React.FC<AlternativeManagementProps> = ({ projectId
                           </div>
                         ) : (
                           <div className="flex-1">
-                            <h5 className="font-medium text-gray-900">{alternative.name}</h5>
-                            {alternative.description && (
-                              <p className="text-sm text-gray-600">{alternative.description}</p>
-                            )}
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h5 className="font-medium text-gray-900">{alternative.name}</h5>
+                                {alternative.description && (
+                                  <p className="text-sm text-gray-600">{alternative.description}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-3">
+                                {alternative.rank && (
+                                  <div className="text-xs font-semibold">
+                                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                                      #{alternative.rank}위
+                                    </span>
+                                  </div>
+                                )}
+                                {alternative.weight && (
+                                  <div className="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                    {(alternative.weight * 100).toFixed(3)}%
+                                  </div>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>

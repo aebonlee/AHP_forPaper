@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import Input from '../common/Input';
+import HierarchyTreeVisualization from '../common/HierarchyTreeVisualization';
+import { DEMO_CRITERIA, DEMO_SUB_CRITERIA } from '../../data/demoData';
 
 interface Criterion {
   id: string;
   name: string;
   description?: string;
-  parentId?: string;
+  parent_id?: string | null;
   level: number;
   children?: Criterion[];
+  weight?: number;
 }
 
 interface CriteriaManagementProps {
@@ -18,28 +21,31 @@ interface CriteriaManagementProps {
 }
 
 const CriteriaManagement: React.FC<CriteriaManagementProps> = ({ projectId, onComplete }) => {
-  const [criteria, setCriteria] = useState<Criterion[]>([
-    {
-      id: '1',
-      name: '성능',
-      description: '시스템의 전반적인 성능 평가',
-      level: 1,
-      children: [
-        { id: '1-1', name: '처리속도', level: 2, parentId: '1' },
-        { id: '1-2', name: '안정성', level: 2, parentId: '1' }
-      ]
-    },
-    {
-      id: '2',
-      name: '비용',
-      description: '총 소유 비용 및 운영비용',
-      level: 1,
-      children: [
-        { id: '2-1', name: '초기비용', level: 2, parentId: '2' },
-        { id: '2-2', name: '유지비용', level: 2, parentId: '2' }
-      ]
-    }
-  ]);
+  // DEMO_CRITERIA와 DEMO_SUB_CRITERIA를 조합하여 완전한 계층구조 생성
+  const [criteria, setCriteria] = useState<Criterion[]>([]);
+
+  useEffect(() => {
+    // 데모 데이터를 컴포넌트 형식으로 변환
+    const combinedCriteria = [
+      ...DEMO_CRITERIA.map(c => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        parent_id: c.parent_id,
+        level: c.level,
+        weight: c.weight
+      })),
+      ...DEMO_SUB_CRITERIA.map(c => ({
+        id: c.id,
+        name: c.name,
+        description: c.description,
+        parent_id: c.parent_id,
+        level: c.level,
+        weight: c.weight
+      }))
+    ];
+    setCriteria(combinedCriteria);
+  }, [projectId]);
 
   const [evaluationMethod, setEvaluationMethod] = useState<'pairwise' | 'direct'>('pairwise');
   const [newCriterion, setNewCriterion] = useState({ name: '', description: '', parentId: '' });
@@ -90,7 +96,7 @@ const CriteriaManagement: React.FC<CriteriaManagementProps> = ({ projectId, onCo
       id: newId,
       name: newCriterion.name,
       description: newCriterion.description,
-      parentId: newCriterion.parentId || undefined,
+      parent_id: newCriterion.parentId || null,
       level
     };
 
@@ -114,6 +120,7 @@ const CriteriaManagement: React.FC<CriteriaManagementProps> = ({ projectId, onCo
     setErrors({});
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDeleteCriterion = (id: string) => {
     setCriteria(prev => {
       const filter = (items: Criterion[]): Criterion[] => {
@@ -129,48 +136,6 @@ const CriteriaManagement: React.FC<CriteriaManagementProps> = ({ projectId, onCo
     });
   };
 
-  const renderCriteriaTree = (criteriaList: Criterion[], level = 0) => {
-    return (
-      <div className={`${level > 0 ? 'ml-6 mt-2' : ''}`}>
-        {criteriaList.map(criterion => (
-          <div key={criterion.id} className="mb-3">
-            <div className={`flex items-center justify-between p-3 border rounded-lg ${
-              level === 0 ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
-            }`}>
-              <div className="flex-1">
-                <div className="flex items-center">
-                  <span className="text-lg mr-2">
-                    {level === 0 ? '🎯' : '📌'}
-                  </span>
-                  <div>
-                    <h4 className="font-medium text-gray-900">{criterion.name}</h4>
-                    {criterion.description && (
-                      <p className="text-sm text-gray-600">{criterion.description}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
-                  Level {criterion.level}
-                </span>
-                <button
-                  onClick={() => handleDeleteCriterion(criterion.id)}
-                  className="text-red-500 hover:text-red-700 text-sm"
-                  title="삭제"
-                >
-                  🗑️
-                </button>
-              </div>
-            </div>
-            {criterion.children && criterion.children.length > 0 && (
-              renderCriteriaTree(criterion.children, level + 1)
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   const getTopLevelCriteria = () => criteria.filter(c => c.level === 1);
 
@@ -216,16 +181,18 @@ const CriteriaManagement: React.FC<CriteriaManagementProps> = ({ projectId, onCo
             </div>
           </div>
 
-          {/* Current Criteria Tree */}
+          {/* Current Criteria Tree Visualization */}
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">🌳 기준 트리 구조</h4>
-            {criteria.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                아직 추가된 기준이 없습니다.
-              </div>
-            ) : (
-              renderCriteriaTree(criteria)
-            )}
+            <HierarchyTreeVisualization
+              nodes={criteria}
+              title="AI 개발 활용 방안 기준 계층구조"
+              showWeights={true}
+              interactive={true}
+              onNodeClick={(node) => {
+                console.log('선택된 기준:', node);
+                // 추후 편집 모드 구현 가능
+              }}
+            />
           </div>
 
           {/* Add New Criterion */}
