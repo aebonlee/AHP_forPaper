@@ -10,6 +10,7 @@ import ProjectCreation from './components/admin/ProjectCreation';
 import ModelBuilding from './components/admin/ModelBuilding';
 import EvaluationResults from './components/admin/EvaluationResults';
 import ProjectCompletion from './components/admin/ProjectCompletion';
+import UserManagement from './components/admin/UserManagement';
 import ProjectSelection from './components/evaluator/ProjectSelection';
 import PairwiseEvaluation from './components/evaluator/PairwiseEvaluation';
 import DirectInputEvaluation from './components/evaluator/DirectInputEvaluation';
@@ -186,6 +187,43 @@ function App() {
   };
 
   const fetchUsers = async () => {
+    if (isDemoMode) {
+      // 데모 모드에서는 샘플 사용자 데이터 사용
+      const demoUsers = [
+        {
+          id: '1',
+          email: 'admin@ahp-system.com',
+          first_name: '관리자',
+          last_name: '시스템',
+          role: 'admin',
+          created_at: '2024-01-01T00:00:00Z',
+          last_login: '2024-01-15T10:30:00Z',
+          status: 'active'
+        },
+        {
+          id: '2',
+          email: 'evaluator1@example.com',
+          first_name: '평가자',
+          last_name: '김',
+          role: 'evaluator',
+          created_at: '2024-01-02T00:00:00Z',
+          last_login: '2024-01-14T15:20:00Z',
+          status: 'active'
+        },
+        {
+          id: '3',
+          email: 'evaluator2@example.com',
+          first_name: '평가자',
+          last_name: '이',
+          role: 'evaluator',
+          created_at: '2024-01-03T00:00:00Z',
+          status: 'inactive'
+        }
+      ];
+      setUsers(demoUsers);
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -206,6 +244,97 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 사용자 관리 함수들
+  const createUser = async (userData: any) => {
+    if (isDemoMode) {
+      // 데모 모드에서는 로컬 상태에 추가
+      const newUser = {
+        ...userData,
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        last_login: undefined
+      };
+      setUsers(prev => [...prev, newUser]);
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 시뮬레이션
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('로그인이 필요합니다.');
+
+    const response = await fetch(`${API_BASE_URL}/api/users`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '사용자 생성에 실패했습니다.');
+    }
+
+    await fetchUsers(); // 목록 새로고침
+  };
+
+  const updateUser = async (userId: string, userData: any) => {
+    if (isDemoMode) {
+      // 데모 모드에서는 로컬 상태 업데이트
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, ...userData } : user
+      ));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 시뮬레이션
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('로그인이 필요합니다.');
+
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '사용자 수정에 실패했습니다.');
+    }
+
+    await fetchUsers(); // 목록 새로고침
+  };
+
+  const deleteUser = async (userId: string) => {
+    if (isDemoMode) {
+      // 데모 모드에서는 로컬 상태에서 제거
+      setUsers(prev => prev.filter(user => user.id !== userId));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 시뮬레이션
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('로그인이 필요합니다.');
+
+    const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || '사용자 삭제에 실패했습니다.');
+    }
+
+    await fetchUsers(); // 목록 새로고침
   };
 
   const createSampleProject = async () => {
@@ -560,56 +689,22 @@ function App() {
         );
         
       case 'users':
-        return (
-          <Card title="사용자 관리">
-            {user.role !== 'admin' ? (
-              <div className="text-red-500">관리자만 접근 가능합니다.</div>
-            ) : loading ? (
-              <div className="text-center py-4">데이터 로딩 중...</div>
-            ) : (
-              <div className="space-y-4">
-                <h4 className="font-medium">전체 사용자 ({users.length}명)</h4>
-                {users.length === 0 ? (
-                  <div className="text-gray-500 text-center py-8">
-                    등록된 사용자가 없습니다.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이름</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">이메일</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">역할</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">생성일</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {users.map((user: any) => (
-                          <tr key={user.id}>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                              {user.first_name} {user.last_name}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">{user.email}</td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
-                              <span className={`px-2 py-1 rounded-full text-xs ${
-                                user.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {user.role === 'admin' ? '관리자' : '평가자'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-500">
-                              {new Date(user.created_at).toLocaleDateString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
+        return user.role !== 'admin' ? (
+          <Card title="접근 권한 없음">
+            <div className="text-center py-8">
+              <div className="text-red-500 text-lg mb-2">❌</div>
+              <div className="text-red-600 font-medium">관리자만 접근 가능합니다.</div>
+            </div>
           </Card>
+        ) : (
+          <UserManagement
+            users={users}
+            loading={loading}
+            onCreateUser={createUser}
+            onUpdateUser={updateUser}
+            onDeleteUser={deleteUser}
+            onRefresh={fetchUsers}
+          />
         );
         
       case 'model-builder':
