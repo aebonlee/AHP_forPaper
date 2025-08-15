@@ -45,10 +45,9 @@ function App() {
   const [projectCreationLoading, setProjectCreationLoading] = useState(false);
 
   useEffect(() => {
-    // Render 프리 요금제 대응: 항상 데모 모드 활성화
-    // 26명 평가자 완전 샘플 데이터로 고정 데모 제공
-    // 백엔드 사용 시 이 부분을 수정: checkBackendAndInitialize();
-    activateDemoMode();
+    // PostgreSQL 데이터베이스 연동 모드 활성화
+    checkBackendAndInitialize();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const activateDemoMode = () => {
@@ -63,78 +62,102 @@ function App() {
     console.log('✅ 데모 데이터 설정 완료 - 프로젝트 수:', DEMO_PROJECTS.length);
   };
 
-  // const checkBackendAndInitialize = async () => {
-  //   try {
-  //     setBackendStatus('checking');
-  //     const available = await isBackendAvailable();
-  //     
-  //     if (available) {
-  //       setBackendStatus('available');
-  //       setIsDemoMode(false);
-  //       // 백엔드가 사용 가능하면 토큰 확인
-  //       const token = localStorage.getItem('token');
-  //       if (token) {
-  //         validateToken(token);
-  //       }
-  //     } else {
-  //       setBackendStatus('unavailable');
-  //       setIsDemoMode(true);
-  //       // 데모 모드 자동 활성화
-  //       setUser(DEMO_USER);
-  //       setProjects(DEMO_PROJECTS);
-  //       setSelectedProjectId(DEMO_PROJECTS[0].id);
-  //     }
-  //   } catch (error) {
-  //     console.log('Backend check failed, activating demo mode');
-  //     setBackendStatus('unavailable');
-  //     setIsDemoMode(true);
-  //     setUser(DEMO_USER);
-  //     setProjects(DEMO_PROJECTS);
-  //     setSelectedProjectId(DEMO_PROJECTS[0].id);
-  //   }
-  // };
+  const checkBackendAndInitialize = async () => {
+    try {
+      setBackendStatus('checking');
+      console.log('🔍 백엔드 연결 확인 중...');
+      
+      const response = await fetch(`${API_BASE_URL}/api/health`);
+      const available = response.ok;
+      
+      if (available) {
+        console.log('✅ 백엔드 연결 성공 - PostgreSQL 데이터베이스 모드');
+        setBackendStatus('available');
+        setIsDemoMode(false);
+        // 백엔드가 사용 가능하면 토큰 확인
+        const token = localStorage.getItem('token');
+        if (token) {
+          validateToken(token);
+        }
+      } else {
+        console.log('⚠️ 백엔드 연결 실패 - 데모 모드로 전환');
+        setBackendStatus('unavailable');
+        setIsDemoMode(true);
+        activateDemoMode();
+      }
+    } catch (error) {
+      console.log('❌ 백엔드 연결 오류 - 데모 모드 활성화:', error);
+      setBackendStatus('unavailable');
+      setIsDemoMode(true);
+      activateDemoMode();
+    }
+  };
 
-  // validateToken - 현재 데모 모드에서 미사용
-  // const validateToken = async (token: string) => {
-  //   try {
-  //     const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
-  //       headers: {
-  //         'Authorization': `Bearer ${token}`,
-  //       },
-  //     });
-  //     
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setUser(data.user);
-  //     } else {
-  //       localStorage.removeItem('token');
-  //       localStorage.removeItem('refreshToken');
-  //     }
-  //   } catch (error) {
-  //     console.error('Token validation failed:', error);
-  //     localStorage.removeItem('token');
-  //     localStorage.removeItem('refreshToken');
-  //   }
-  // };
+  const validateToken = async (token: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        // 프로젝트 목록 로드
+        fetchProjects();
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+      }
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+    }
+  };
 
   const handleLogin = async (email: string, password: string) => {
     setLoginLoading(true);
     setLoginError('');
 
     try {
-      // 프리 요금제용 - 항상 데모 크리덴셜로 로그인 (백엔드 미사용)
-      if (email === DEMO_LOGIN_CREDENTIALS.email && password === DEMO_LOGIN_CREDENTIALS.password) {
-        setUser(DEMO_USER);
-        setProjects(DEMO_PROJECTS);
-        setSelectedProjectId(DEMO_PROJECTS[0].id);
-        console.log('✅ AI 개발 활용 AHP 데이터 로드 완료');
-        return;
+      if (isDemoMode) {
+        // 데모 모드일 때만 데모 크리덴셜 사용
+        if (email === DEMO_LOGIN_CREDENTIALS.email && password === DEMO_LOGIN_CREDENTIALS.password) {
+          setUser(DEMO_USER);
+          setProjects(DEMO_PROJECTS);
+          setSelectedProjectId(DEMO_PROJECTS[0].id);
+          console.log('✅ 데모 모드 - AI 개발 활용 AHP 데이터 로드 완료');
+          return;
+        } else {
+          throw new Error('데모 계정: admin@ahp-system.com / password123');
+        }
       } else {
-        throw new Error('데모 계정: admin@ahp-system.com / password123');
-      }
+        // PostgreSQL 백엔드 로그인
+        const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
 
-      // 백엔드 호출 부분은 프로덕션 요금제 사용 시 활성화
-      
+        const data = await response.json();
+        
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          if (data.refreshToken) {
+            localStorage.setItem('refreshToken', data.refreshToken);
+          }
+          setUser(data.user);
+          console.log('✅ PostgreSQL 백엔드 로그인 성공');
+          // 프로젝트 목록 로드
+          await fetchProjects();
+        } else {
+          throw new Error(data.message || '로그인에 실패했습니다.');
+        }
+      }
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : 'Login failed');
     } finally {
