@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
+import { MESSAGES } from '../../constants/messages';
 
 interface EvaluationItem {
   id: string;
@@ -315,18 +316,8 @@ const DirectInputEvaluation: React.FC<DirectInputEvaluationProps> = ({
               <div className="flex items-start space-x-2">
                 <span className="text-yellow-600 text-lg">⚠️</span>
                 <div className="flex-1">
-                  <p className="text-sm text-yellow-800">
-                    <strong>데이터 값이 낮을수록 좋은 경우</strong> (예: 비용, 오류율, 처리시간 등)는 
-                    <button 
-                      className="mx-1 underline font-medium hover:text-yellow-900"
-                      onClick={() => {
-                        // 모든 항목에 대해 역수 변환 옵션 안내
-                        alert('각 항목의 "역수로" 버튼을 클릭하여 역수 값을 취하도록 설정하세요.');
-                      }}
-                    >
-                      여기를
-                    </button> 
-                    참고하여 역수 값을 취하도록 설정하세요.
+                  <p className="text-sm text-yellow-800 font-medium">
+                    {MESSAGES.COST_TYPE_WARNING}
                   </p>
                   <div className="text-xs text-yellow-700 mt-2">
                     역수 변환 시 "입력 데이터는 그대로, 중요도만 바뀜" - 낮은 값이 높은 가중치를 가지게 됩니다.

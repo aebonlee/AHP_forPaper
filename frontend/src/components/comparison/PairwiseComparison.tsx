@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Card from '../common/Card';
+import ScreenID from '../common/ScreenID';
 import { DEMO_COMPARISONS } from '../../data/demoData';
+import { MESSAGES } from '../../constants/messages';
+import { SCREEN_IDS } from '../../constants/screenIds';
 
 interface Criterion {
   id: string;
@@ -206,6 +209,53 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
     return `1/${Math.round(1/value)}`;
   };
 
+  // Calculate Consistency Ratio (CR)
+  const calculateConsistencyRatio = (): number => {
+    if (!elements || elements.length < 3) return 0;
+    
+    // Build comparison matrix
+    const n = elements.length;
+    const matrix: number[][] = Array(n).fill(null).map(() => Array(n).fill(1));
+    
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        if (i !== j) {
+          const value = getComparisonValue(elements[i], elements[j]);
+          matrix[i][j] = value || 1;
+        }
+      }
+    }
+    
+    // Calculate eigenvalue (simplified approximation)
+    const columnSums = matrix[0].map((_, j) => matrix.reduce((sum, row) => sum + row[j], 0));
+    const normalizedMatrix = matrix.map(row => row.map((val, j) => val / columnSums[j]));
+    const priorities = normalizedMatrix.map(row => row.reduce((sum, val) => sum + val, 0) / n);
+    
+    let lambdaMax = 0;
+    for (let i = 0; i < n; i++) {
+      let sum = 0;
+      for (let j = 0; j < n; j++) {
+        sum += matrix[j][i] * priorities[j];
+      }
+      lambdaMax += sum / priorities[i];
+    }
+    lambdaMax /= n;
+    
+    // Consistency Index (CI)
+    const CI = (lambdaMax - n) / (n - 1);
+    
+    // Random Index (RI) for different matrix sizes
+    const RI = [0, 0, 0, 0.58, 0.9, 1.12, 1.24, 1.32, 1.41, 1.45];
+    
+    // Consistency Ratio (CR)
+    const CR = n > 2 ? CI / RI[n] : 0;
+    
+    return CR;
+  };
+
+  const consistencyRatio = calculateConsistencyRatio();
+  const showCRWarning = isComplete && consistencyRatio > 0.1;
+
   // 데모 모드에서는 간단한 인터페이스 표시
   if (demoMode) {
     return (
@@ -234,20 +284,20 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
             <div className="bg-green-50 border border-green-200 rounded p-4">
               <h6 className="font-medium text-green-800 mb-2">✅ 완료된 비교 샘플</h6>
               <div className="space-y-2 text-sm text-green-700">
-                <div>• 비용 효율성 vs 기술적 우수성: 3 (비용 효율성이 약간 더 중요)</div>
-                <div>• 비용 효율성 vs 시장성: 2 (비용 효율성이 조금 더 중요)</div>
-                <div>• 기술적 우수성 vs 시장성: 1/2 (시장성이 조금 더 중요)</div>
-                <div>• AI 솔루션 vs 전통적 방법: 5 (AI 솔루션이 강하게 우세)</div>
+                <div>• 개발 생산성 효율화 vs 코딩 실무 품질 적합화: 1.4 (생산성이 약간 더 중요)</div>
+                <div>• 코딩 실무 품질 적합화 vs 개발 프로세스 자동화: 1.1 (품질이 약간 더 중요)</div>
+                <div>• 개발 생산성 효율화 vs 개발 프로세스 자동화: 1.3 (생산성이 약간 더 중요)</div>
+                <div>• 코딩 작성 속도 향상 vs 디버깅 시간 단축: 1.7 (코딩 속도가 더 중요)</div>
               </div>
             </div>
             
             <div className="text-gray-600">
               <p className="font-medium">평가 프로세스:</p>
               <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
-                <li>기준 간 쌍대비교 (4개 기준, 6개 쌍)</li>
-                <li>대안 간 쌍대비교 (각 기준별, 3개 대안, 3개 쌍 × 4기준 = 12개 쌍)</li>
+                <li>상위 기준 간 쌍대비교 (3개 상위기준, 3개 쌍)</li>
+                <li>세부 기준 간 쌍대비교 (각 상위기준별, 3개 세부기준, 3개 쌍 × 3그룹 = 9개 쌍)</li>
                 <li>일관성 검증 (CR &lt; 0.1)</li>
-                <li>자동 상호비교 매트릭스 생성</li>
+                <li>자동 상호비교 매트릭스 생성 및 가중치 계산</li>
               </ul>
             </div>
 
@@ -288,6 +338,7 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
 
   return (
     <div className="space-y-6">
+      <ScreenID id={demoMode ? SCREEN_IDS.ADMIN.STEP2_PAIRWISE : SCREEN_IDS.RATER.PAIRWISE} />
       <Card title={`쌍대비교: ${criterionName}`}>
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -375,18 +426,40 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
           )}
 
           {isComplete && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h4 className="font-medium text-green-800 mb-2">✅ 비교 완료!</h4>
-              <p className="text-green-700">
-                모든 쌍대비교가 완료되었습니다. 이제 AHP 계산을 수행할 수 있습니다.
-              </p>
-              {onComplete && (
-                <button
-                  onClick={onComplete}
-                  className="mt-3 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                >
-                  계산 결과 보기
-                </button>
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="font-medium text-green-800 mb-2">✅ 비교 완료!</h4>
+                <p className="text-green-700">
+                  모든 쌍대비교가 완료되었습니다. 일관성 비율: {(consistencyRatio * 100).toFixed(1)}%
+                </p>
+                {onComplete && (
+                  <button
+                    onClick={onComplete}
+                    className="mt-3 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  >
+                    계산 결과 보기
+                  </button>
+                )}
+              </div>
+              
+              {showCRWarning && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start space-x-3">
+                    <span className="text-red-500 text-lg">⚠️</span>
+                    <div>
+                      <h4 className="font-medium text-red-800 mb-1">일관성 경고</h4>
+                      <p className="text-red-700 text-sm">
+                        {MESSAGES.CR_WARNING}
+                      </p>
+                      <button
+                        onClick={() => alert('판단 도우미 기능 (구현 예정)')}
+                        className="mt-2 text-red-600 underline text-sm hover:text-red-800"
+                      >
+                        판단 도우미 보기
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           )}

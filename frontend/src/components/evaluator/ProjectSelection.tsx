@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
+import ScreenID from '../common/ScreenID';
+import { MESSAGES } from '../../constants/messages';
+import { SCREEN_IDS } from '../../constants/screenIds';
 
 interface AssignedProject {
   id: string;
@@ -11,6 +14,7 @@ interface AssignedProject {
   deadline?: string;
   adminName: string;
   evaluationMethod: 'pairwise' | 'direct';
+  workshopActive?: boolean;
 }
 
 interface ProjectSelectionProps {
@@ -31,7 +35,8 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
       progress: 0,
       deadline: '2024-12-31',
       adminName: '김관리자',
-      evaluationMethod: 'pairwise'
+      evaluationMethod: 'pairwise',
+      workshopActive: true
     },
     {
       id: '2',
@@ -41,7 +46,8 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
       progress: 65,
       deadline: '2024-11-15',
       adminName: '이매니저',
-      evaluationMethod: 'direct'
+      evaluationMethod: 'direct',
+      workshopActive: false
     },
     {
       id: '3',
@@ -51,7 +57,8 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
       progress: 100,
       deadline: '2024-10-30',
       adminName: '박팀장',
-      evaluationMethod: 'pairwise'
+      evaluationMethod: 'pairwise',
+      workshopActive: false
     }
   ]);
 
@@ -98,6 +105,13 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
     if (project.status === 'completed') {
       return; // 완료된 프로젝트는 재입장 불가
     }
+    
+    // Workshop access restriction check
+    if (!project.workshopActive) {
+      alert(MESSAGES.WORKSHOP_ACCESS_RESTRICTED);
+      return;
+    }
+    
     onProjectSelect(project.id, project.title, project.evaluationMethod);
   };
 
@@ -121,6 +135,7 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto">
+      <ScreenID id={SCREEN_IDS.RATER.PROJECT_SELECT} />
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           단계 1 — 프로젝트 선택
@@ -180,6 +195,14 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
                         <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
                         {getStatusBadge(project.status)}
                         {getMethodBadge(project.evaluationMethod)}
+                        {/* Workshop Status Badge */}
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          project.workshopActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {project.workshopActive ? '워크숍 진행중' : '워크숍 대기중'}
+                        </span>
                       </div>
                       
                       <p className="text-gray-600 text-sm mb-3">{project.description}</p>
@@ -223,14 +246,22 @@ const ProjectSelection: React.FC<ProjectSelectionProps> = ({
                     <div className="lg:ml-6">
                       <Button
                         onClick={() => handleProjectEnter(project)}
-                        variant={project.status === 'completed' ? 'secondary' : 'primary'}
+                        variant={project.status === 'completed' || !project.workshopActive ? 'secondary' : 'primary'}
                         size="lg"
-                        disabled={project.status === 'completed'}
+                        disabled={project.status === 'completed' || !project.workshopActive}
                         className="w-full lg:w-auto"
                       >
                         {project.status === 'completed' ? '완료됨' : 
+                         !project.workshopActive ? '워크숍 대기중' :
                          project.status === 'in_progress' ? '계속하기' : '입장'}
                       </Button>
+                      
+                      {/* Workshop restriction warning */}
+                      {!project.workshopActive && project.status !== 'completed' && (
+                        <div className="mt-2 text-xs text-red-600">
+                          {MESSAGES.WORKSHOP_ACCESS_RESTRICTED}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>

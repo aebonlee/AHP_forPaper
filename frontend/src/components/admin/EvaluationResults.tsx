@@ -3,6 +3,7 @@ import Card from '../common/Card';
 import Button from '../common/Button';
 import GroupWeightAnalysis from './GroupWeightAnalysis';
 import SensitivityAnalysis from './SensitivityAnalysis';
+import { MESSAGES } from '../../constants/messages';
 
 interface EvaluationResultsProps {
   projectId: string;
@@ -89,7 +90,7 @@ const EvaluationResults: React.FC<EvaluationResultsProps> = ({
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <h4 className="font-medium text-yellow-900 mb-2">💾 중요 안내</h4>
           <p className="text-sm text-yellow-700">
-            표시된 평가결과는 DB에 저장되지 않으니 Excel 저장 단추로 저장하시기 바랍니다.
+            {MESSAGES.SAVE_WARNING}
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Card from '../common/Card';
 import { directEvaluationAPI, apiHelpers } from '../../services/apiService';
+import { MESSAGES } from '../../constants/messages';
 
 interface DirectInputValue {
   alternativeId: string;
@@ -206,6 +207,25 @@ const DirectInputEvaluation: React.FC<DirectInputEvaluationProps> = ({
                 : "💡 비용형 예시: 가격, 소요시간, 위험도, 복잡성 등 (자동으로 역수 처리됩니다)"
               }
             </div>
+            
+            {!isBenefitCriterion && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                <div className="flex items-start space-x-2">
+                  <span className="text-orange-500">⚠️</span>
+                  <div>
+                    <p className="text-orange-800 text-sm font-medium">
+                      {MESSAGES.COST_TYPE_WARNING}
+                    </p>
+                    <button
+                      onClick={() => setIsBenefitCriterion(true)}
+                      className="mt-1 text-orange-600 underline text-sm hover:text-orange-800"
+                    >
+                      여기를
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
+import ScreenID from '../common/ScreenID';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { MESSAGES } from '../../constants/messages';
+import { SCREEN_IDS } from '../../constants/screenIds';
 
 interface SensitivityAnalysisProps {
   projectId: string;
@@ -16,23 +19,26 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId, on
   const [results, setResults] = useState<any>(null);
 
   const criteria = [
-    { id: 'performance', name: '성능', weight: 0.45 },
-    { id: 'cost', name: '비용', weight: 0.35 },
-    { id: 'usability', name: '사용성', weight: 0.20 }
+    { id: 'productivity', name: '개발 생산성 효율화', weight: 0.40386 },
+    { id: 'quality', name: '코딩 실무 품질 적합화', weight: 0.30101 },
+    { id: 'automation', name: '개발 프로세스 자동화', weight: 0.29513 }
   ];
 
   const subCriteria = {
-    performance: [
-      { id: 'speed', name: '처리속도', weight: 0.7 },
-      { id: 'stability', name: '안정성', weight: 0.3 }
+    productivity: [
+      { id: 'coding-speed', name: '코딩 작성 속도 향상', weight: 0.4199 },
+      { id: 'debugging', name: '디버깅 시간 단축', weight: 0.2487 },
+      { id: 'repetitive', name: '반복 작업 최소화', weight: 0.3314 }
     ],
-    cost: [
-      { id: 'initial', name: '초기비용', weight: 0.6 },
-      { id: 'maintenance', name: '유지비용', weight: 0.4 }
+    quality: [
+      { id: 'code-quality', name: '코드 품질 개선 및 최적화', weight: 0.5206 },
+      { id: 'ai-reliability', name: 'AI생성 코딩의 신뢰성', weight: 0.2228 },
+      { id: 'learning', name: '신규 기술/언어 학습지원', weight: 0.2566 }
     ],
-    usability: [
-      { id: 'interface', name: '인터페이스', weight: 0.8 },
-      { id: 'learning', name: '학습용이성', weight: 0.2 }
+    automation: [
+      { id: 'test-gen', name: '테스트 케이스 자동 생성', weight: 0.2932 },
+      { id: 'documentation', name: '기술 문서/주석 자동화', weight: 0.3141 },
+      { id: 'deployment', name: '형상관리 및 배포 지원', weight: 0.3927 }
     ]
   };
 
@@ -53,20 +59,24 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId, on
     setResults({
       original: {
         alternatives: [
-          { name: '대안 A', score: 0.421, rank: 1 },
-          { name: '대안 B', score: 0.358, rank: 2 },
-          { name: '대안 C', score: 0.221, rank: 3 }
+          { name: '코딩 작성 속도 향상', score: 0.16959, rank: 1 },
+          { name: '코드 품질 개선 및 최적화', score: 0.15672, rank: 2 },
+          { name: '반복 작업 최소화', score: 0.13382, rank: 3 },
+          { name: '형상관리 및 배포 지원', score: 0.11591, rank: 4 },
+          { name: '디버깅 시간 단축', score: 0.10044, rank: 5 }
         ]
       },
       modified: {
         alternatives: [
-          { name: '대안 A', score: 0.385, rank: 2 },
-          { name: '대안 B', score: 0.394, rank: 1 },
-          { name: '대안 C', score: 0.221, rank: 3 }
+          { name: '코딩 작성 속도 향상', score: 0.14520, rank: 2 },
+          { name: '코드 품질 개선 및 최적화', score: 0.15672, rank: 1 },
+          { name: '반복 작업 최소화', score: 0.15821, rank: 1 },
+          { name: '형상관리 및 배포 지원', score: 0.11591, rank: 4 },
+          { name: '디버깅 시간 단축', score: 0.12483, rank: 3 }
         ]
       },
       changes: [
-        { criterion: selectedSubCriterion, from: 0.7, to: parseFloat(newValue) }
+        { criterion: selectedSubCriterion, from: getCurrentSubCriteria().find(c => c.id === selectedSubCriterion)?.weight || 0, to: parseFloat(newValue) }
       ]
     });
     
@@ -86,6 +96,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId, on
 
   return (
     <div className="space-y-6">
+      <ScreenID id={SCREEN_IDS.ADMIN.STEP3_SENS} />
       <Card title="서브 기능 2) 민감도 분석">
         <div className="space-y-6">
           {/* 주의 배지 - 상시 표시 */}
@@ -93,7 +104,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId, on
             <div className="flex items-center">
               <div className="text-yellow-500 mr-2">⚠️</div>
               <span className="text-sm text-yellow-800 font-medium">
-                서버 미저장, 캡처 권장
+                {MESSAGES.RESULTS_NOT_SAVED}
               </span>
             </div>
           </div>
@@ -113,7 +124,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId, on
                 <h5 className="font-medium text-blue-900 mb-2">📊 민감도 분석 흐름</h5>
                 <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
                   <li>민감도 분석 버튼 클릭</li>
-                  <li>변경하려는 기준의 상위기준 선택(예: '실내디자인' 변경 시 상위 '디자인' 클릭)</li>
+                  <li>변경하려는 기준의 상위기준 선택(예: '코딩 작성 속도 향상' 변경 시 상위 '개발 생산성 효율화' 클릭)</li>
                   <li>변경할 기준 클릭</li>
                   <li>우측에 변경값 입력 칸 표시</li>
                   <li>분석 시작 클릭</li>
@@ -249,19 +260,29 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId, on
                     <BarChart
                       data={[
                         {
-                          name: '대안 A',
+                          name: '코딩 속도',
                           기존: Math.round(results.original.alternatives[0].score * 100),
                           변경후: Math.round(results.modified.alternatives[0].score * 100)
                         },
                         {
-                          name: '대안 B',
+                          name: '코드 품질',
                           기존: Math.round(results.original.alternatives[1].score * 100),
                           변경후: Math.round(results.modified.alternatives[1].score * 100)
                         },
                         {
-                          name: '대안 C',
+                          name: '반복 작업',
                           기존: Math.round(results.original.alternatives[2].score * 100),
                           변경후: Math.round(results.modified.alternatives[2].score * 100)
+                        },
+                        {
+                          name: '형상관리',
+                          기존: Math.round(results.original.alternatives[3].score * 100),
+                          변경후: Math.round(results.modified.alternatives[3].score * 100)
+                        },
+                        {
+                          name: '디버깅',
+                          기존: Math.round(results.original.alternatives[4].score * 100),
+                          변경후: Math.round(results.modified.alternatives[4].score * 100)
                         }
                       ]}
                       margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -341,7 +362,7 @@ const SensitivityAnalysis: React.FC<SensitivityAnalysisProps> = ({ projectId, on
                   <div>
                     <h5 className="font-medium text-red-900">⚠️ 중요 안내</h5>
                     <p className="text-sm text-red-700 mt-1">
-                      분석 결과는 서버에 저장되지 않습니다. 화면 캡처를 통해 결과를 보관하세요.
+                      {MESSAGES.RESULTS_NOT_SAVED}
                     </p>
                   </div>
                   <Button onClick={captureResults} variant="primary">

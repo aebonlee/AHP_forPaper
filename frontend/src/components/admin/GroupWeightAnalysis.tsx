@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import Card from '../common/Card';
 import Button from '../common/Button';
+import ScreenID from '../common/ScreenID';
+import { MESSAGES } from '../../constants/messages';
+import { SCREEN_IDS } from '../../constants/screenIds';
 
 interface Evaluator {
   id: string;
@@ -17,22 +20,28 @@ interface GroupWeightAnalysisProps {
 
 const GroupWeightAnalysis: React.FC<GroupWeightAnalysisProps> = ({ projectId }) => {
   const [evaluators, setEvaluators] = useState<Evaluator[]>([
-    { id: '1', name: '김평가', status: 'completed', progress: 100, weight: 1.0, included: true },
-    { id: '2', name: '이전문', status: 'completed', progress: 100, weight: 1.0, included: true },
-    { id: '3', name: '박전문가', status: 'incomplete', progress: 60, weight: 0.5, included: false },
-    { id: '4', name: '최전문', status: 'completed', progress: 100, weight: 1.2, included: true }
+    { id: 'p001', name: '평가자 1', status: 'completed', progress: 100, weight: 1.0, included: true },
+    { id: 'p002', name: '평가자 2', status: 'completed', progress: 100, weight: 1.0, included: true },
+    { id: 'p003', name: '평가자 3', status: 'completed', progress: 100, weight: 1.0, included: true },
+    { id: 'p004', name: '평가자 4', status: 'completed', progress: 100, weight: 1.0, included: true }
   ]);
 
   const [results, setResults] = useState({
     criteria: [
-      { name: '성능', weight: 0.45, rank: 1 },
-      { name: '비용', weight: 0.35, rank: 2 },
-      { name: '사용성', weight: 0.20, rank: 3 }
+      { name: '개발 생산성 효율화', weight: 0.40386, rank: 1 },
+      { name: '코딩 실무 품질 적합화', weight: 0.30101, rank: 2 },
+      { name: '개발 프로세스 자동화', weight: 0.29513, rank: 3 }
     ],
     alternatives: [
-      { name: '대안 A', score: 0.421, rank: 1 },
-      { name: '대안 B', score: 0.358, rank: 2 },
-      { name: '대안 C', score: 0.221, rank: 3 }
+      { name: '코딩 작성 속도 향상', score: 0.16959, rank: 1 },
+      { name: '코드 품질 개선 및 최적화', score: 0.15672, rank: 2 },
+      { name: '반복 작업 최소화', score: 0.13382, rank: 3 },
+      { name: '형상관리 및 배포 지원', score: 0.11591, rank: 4 },
+      { name: '디버깅 시간 단축', score: 0.10044, rank: 5 },
+      { name: '기술 문서/주석 자동화', score: 0.09270, rank: 6 },
+      { name: '테스트 케이스 자동 생성', score: 0.08653, rank: 7 },
+      { name: '신규 기술/언어 학습지원', score: 0.07723, rank: 8 },
+      { name: 'AI생성 코딩의 신뢰성', score: 0.06706, rank: 9 }
     ]
   });
 
@@ -68,6 +77,7 @@ const GroupWeightAnalysis: React.FC<GroupWeightAnalysisProps> = ({ projectId }) 
 
   return (
     <div className="space-y-6">
+      <ScreenID id={SCREEN_IDS.ADMIN.STEP3_WEIGHTS} />
       <Card title="그룹별 가중치 도출">
         <div className="space-y-6">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -219,7 +229,7 @@ const GroupWeightAnalysis: React.FC<GroupWeightAnalysisProps> = ({ projectId }) 
                 <div>
                   <h5 className="font-medium text-yellow-900">📥 결과 저장</h5>
                   <p className="text-sm text-yellow-700 mt-1">
-                    표시된 평가결과는 DB에 저장되지 않으니 Excel 저장 단추로 별도 저장하세요.
+                    {MESSAGES.SAVE_WARNING}
                   </p>
                 </div>
                 <Button onClick={exportToExcel} variant="primary">
@@ -248,7 +258,7 @@ const GroupWeightAnalysis: React.FC<GroupWeightAnalysisProps> = ({ projectId }) 
                 <div className="text-sm text-gray-600">최적 대안</div>
               </div>
               <div>
-                <div className="text-lg font-bold text-purple-600">85.3%</div>
+                <div className="text-lg font-bold text-purple-600">99.8%</div>
                 <div className="text-sm text-gray-600">신뢰도</div>
               </div>
             </div>
