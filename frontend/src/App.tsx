@@ -52,12 +52,14 @@ function App() {
 
   const activateDemoMode = () => {
     console.log('🎯 데모 모드 강제 활성화 - AI 개발 활용 방안 AHP 분석');
+    console.log('📋 로딩될 샘플 프로젝트:', DEMO_PROJECTS);
     setBackendStatus('unavailable');
     setIsDemoMode(true);
     setUser(DEMO_USER);
     setProjects(DEMO_PROJECTS);
     setSelectedProjectId(DEMO_PROJECTS[0].id);
     setActiveTab('landing');
+    console.log('✅ 데모 데이터 설정 완료 - 프로젝트 수:', DEMO_PROJECTS.length);
   };
 
   // const checkBackendAndInitialize = async () => {
@@ -482,11 +484,17 @@ function App() {
 
   useEffect(() => {
     if (user && activeTab === 'projects') {
-      fetchProjects();
+      if (isDemoMode) {
+        // 데모 모드에서는 DEMO_PROJECTS 강제 설정
+        console.log('🔧 프로젝트 탭 활성화 - 데모 데이터 강제 설정');
+        setProjects(DEMO_PROJECTS);
+      } else {
+        fetchProjects();
+      }
     } else if (user && activeTab === 'users' && user.role === 'admin') {
       fetchUsers();
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, isDemoMode]);
 
   const renderDemoNotice = () => (
     <div className={`mb-6 border rounded-lg p-4 ${
@@ -634,6 +642,8 @@ function App() {
         );
 
       case 'projects':
+        console.log('🔍 프로젝트 관리 렌더링 - 현재 프로젝트:', projects);
+        console.log('📊 데모 모드:', isDemoMode, '프로젝트 수:', projects.length);
         return (
           <Card title="프로젝트 관리">
             {loading ? (
