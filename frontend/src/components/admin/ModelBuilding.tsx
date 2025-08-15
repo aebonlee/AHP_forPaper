@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Card from '../common/Card';
+// import Card from '../common/Card';
 import Button from '../common/Button';
 import CriteriaManagement from './CriteriaManagement';
 import AlternativeManagement from './AlternativeManagement';

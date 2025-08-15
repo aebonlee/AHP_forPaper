@@ -26,7 +26,7 @@ const GroupWeightAnalysis: React.FC<GroupWeightAnalysisProps> = ({ projectId }) 
     { id: 'p004', name: '평가자 4', status: 'completed', progress: 100, weight: 1.0, included: true }
   ]);
 
-  const [results, setResults] = useState({
+  const [results] = useState({
     criteria: [
       { name: '개발 생산성 효율화', weight: 0.40386, rank: 1 },
       { name: '코딩 실무 품질 적합화', weight: 0.30101, rank: 2 },

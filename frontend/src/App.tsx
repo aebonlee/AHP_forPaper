@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from './components/layout/Layout';
 import LoginForm from './components/auth/LoginForm';
 import Card from './components/common/Card';
@@ -44,8 +44,9 @@ function App() {
   const [projectCreationLoading, setProjectCreationLoading] = useState(false);
 
   useEffect(() => {
-    // 프리 요금제를 위한 강제 데모 모드 활성화 
-    // 프로젝트 완료 후 요금제 변경 시 이 부분을 주석 해제: checkBackendAndInitialize();
+    // Render 프리 요금제 대응: 항상 데모 모드 활성화
+    // 26명 평가자 완전 샘플 데이터로 고정 데모 제공
+    // 백엔드 사용 시 이 부분을 수정: checkBackendAndInitialize();
     activateDemoMode();
   }, []);
 
@@ -59,36 +60,36 @@ function App() {
     setActiveTab('landing');
   };
 
-  const checkBackendAndInitialize = async () => {
-    try {
-      setBackendStatus('checking');
-      const available = await isBackendAvailable();
-      
-      if (available) {
-        setBackendStatus('available');
-        setIsDemoMode(false);
-        // 백엔드가 사용 가능하면 토큰 확인
-        const token = localStorage.getItem('token');
-        if (token) {
-          validateToken(token);
-        }
-      } else {
-        setBackendStatus('unavailable');
-        setIsDemoMode(true);
-        // 데모 모드 자동 활성화
-        setUser(DEMO_USER);
-        setProjects(DEMO_PROJECTS);
-        setSelectedProjectId(DEMO_PROJECTS[0].id);
-      }
-    } catch (error) {
-      console.log('Backend check failed, activating demo mode');
-      setBackendStatus('unavailable');
-      setIsDemoMode(true);
-      setUser(DEMO_USER);
-      setProjects(DEMO_PROJECTS);
-      setSelectedProjectId(DEMO_PROJECTS[0].id);
-    }
-  };
+  // const checkBackendAndInitialize = async () => {
+  //   try {
+  //     setBackendStatus('checking');
+  //     const available = await isBackendAvailable();
+  //     
+  //     if (available) {
+  //       setBackendStatus('available');
+  //       setIsDemoMode(false);
+  //       // 백엔드가 사용 가능하면 토큰 확인
+  //       const token = localStorage.getItem('token');
+  //       if (token) {
+  //         validateToken(token);
+  //       }
+  //     } else {
+  //       setBackendStatus('unavailable');
+  //       setIsDemoMode(true);
+  //       // 데모 모드 자동 활성화
+  //       setUser(DEMO_USER);
+  //       setProjects(DEMO_PROJECTS);
+  //       setSelectedProjectId(DEMO_PROJECTS[0].id);
+  //     }
+  //   } catch (error) {
+  //     console.log('Backend check failed, activating demo mode');
+  //     setBackendStatus('unavailable');
+  //     setIsDemoMode(true);
+  //     setUser(DEMO_USER);
+  //     setProjects(DEMO_PROJECTS);
+  //     setSelectedProjectId(DEMO_PROJECTS[0].id);
+  //   }
+  // };
 
   const validateToken = async (token: string) => {
     try {
@@ -180,7 +181,7 @@ function App() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (isDemoMode) {
       // 데모 모드에서는 샘플 사용자 데이터 사용
       const demoUsers = [
@@ -238,7 +239,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isDemoMode, API_BASE_URL]);
 
   // 사용자 관리 함수들
   const createUser = async (userData: any) => {
@@ -332,6 +333,12 @@ function App() {
   };
 
   const createSampleProject = async () => {
+    if (isDemoMode) {
+      // 데모 모드에서는 이미 DEMO_PROJECTS가 로드되어 있음
+      console.log('데모 모드에서 샘플 프로젝트가 이미 로드되어 있습니다.');
+      return;
+    }
+
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -636,12 +643,14 @@ function App() {
                     >
                       새 프로젝트 생성
                     </button>
-                    <button
-                      onClick={createSampleProject}
-                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                    >
-                      샘플 프로젝트 생성
-                    </button>
+                    {!isDemoMode && (
+                      <button
+                        onClick={createSampleProject}
+                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                      >
+                        샘플 프로젝트 생성
+                      </button>
+                    )}
                   </div>
                 </div>
                 
