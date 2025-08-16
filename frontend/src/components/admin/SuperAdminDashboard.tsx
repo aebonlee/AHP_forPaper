@@ -847,45 +847,72 @@ const SuperAdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-4 overflow-x-auto">
-          {[
-            { id: 'dashboard', label: '대시보드', icon: '📊' },
-            { id: 'users', label: '사용자', icon: '👥' },
-            { id: 'projects', label: '프로젝트', icon: '📋' },
-            { id: 'monitoring', label: '모니터링', icon: '⚡' },
-            { id: 'database', label: 'DB 관리', icon: '🗄️' },
-            { id: 'audit', label: '감사 로그', icon: '📝' },
-            { id: 'settings', label: '설정', icon: '⚙️' },
-            { id: 'backup', label: '백업', icon: '💾' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`py-2 px-3 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
-        </nav>
+      {/* Navigation Menu - 2 Row Button Layout */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="space-y-4">
+          {/* First Row - Dashboard & Core Management */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { id: 'dashboard', label: '시스템 대시보드', icon: '📊', desc: '전체 현황 및 통계' },
+              { id: 'users', label: '사용자 관리', icon: '👥', desc: '계정 및 권한 관리' },
+              { id: 'projects', label: '전체 프로젝트', icon: '📋', desc: '모든 프로젝트 통합 관리' },
+              { id: 'monitoring', label: '시스템 모니터링', icon: '⚡', desc: '실시간 성능 추적' }
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                  activeTab === item.id
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                }`}
+              >
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <div className="font-medium text-sm">{item.label}</div>
+                <div className="text-xs text-gray-500 mt-1">{item.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Second Row - Advanced Admin Functions */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { id: 'database', label: 'DB 관리', icon: '🗄️', desc: '데이터베이스 상태 관리' },
+              { id: 'audit', label: '감사 로그', icon: '📝', desc: '활동 내역 및 보안' },
+              { id: 'settings', label: '시스템 설정', icon: '⚙️', desc: '전역 설정 및 정책' },
+              { id: 'backup', label: '백업/복원', icon: '💾', desc: '데이터 백업 관리' }
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                  activeTab === item.id
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                }`}
+              >
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <div className="font-medium text-sm">{item.label}</div>
+                <div className="text-xs text-gray-500 mt-1">{item.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Tab Content */}
-      <div className="mt-6">
-        {activeTab === 'dashboard' && renderDashboard()}
-        {activeTab === 'users' && renderUsers()}
-        {activeTab === 'projects' && renderProjects()}
-        {activeTab === 'monitoring' && renderMonitoring()}
-        {activeTab === 'database' && renderDatabase()}
-        {activeTab === 'audit' && renderAudit()}
-        {activeTab === 'settings' && renderSettings()}
-        {activeTab === 'backup' && renderBackup()}
-        {activeTab === 'system' && renderSystem()}
+      {/* Main Content */}
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="p-6">
+          {activeTab === 'dashboard' && renderDashboard()}
+          {activeTab === 'users' && renderUsers()}
+          {activeTab === 'projects' && renderProjects()}
+          {activeTab === 'monitoring' && renderMonitoring()}
+          {activeTab === 'database' && renderDatabase()}
+          {activeTab === 'audit' && renderAudit()}
+          {activeTab === 'settings' && renderSettings()}
+          {activeTab === 'backup' && renderBackup()}
+          {activeTab === 'system' && renderSystem()}
+        </div>
       </div>
     </div>
   );
