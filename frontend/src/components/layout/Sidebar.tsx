@@ -10,32 +10,49 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, adminType, activeTab, onTabChange }) => {
   const superAdminMenuItems = [
-    { id: 'super-admin', label: '대시보드', icon: '📊' },
+    { id: 'super-admin', label: '시스템 대시보드', icon: '📊' },
+    { id: 'users', label: '사용자 관리', icon: '👥' },
+    { id: 'projects', label: '전체 프로젝트', icon: '📋' },
+    { id: 'system-monitor', label: '시스템 모니터링', icon: '⚡' },
+    { id: 'database-management', label: 'DB 관리', icon: '🗄️' },
+    { id: 'audit-logs', label: '감사 로그', icon: '📝' },
+    { id: 'system-settings', label: '시스템 설정', icon: '⚙️' },
+    { id: 'backup-restore', label: '백업/복원', icon: '💾' },
     { id: 'admin-type-selection', label: '모드 전환', icon: '🔄' }
   ];
 
   const personalServiceMenuItems = [
-    { id: 'personal-service', label: '개인 서비스', icon: '👤' },
+    { id: 'personal-service', label: '내 대시보드', icon: '🏠' },
+    { id: 'my-projects', label: '내 프로젝트', icon: '📂' },
+    { id: 'project-creation', label: '새 프로젝트', icon: '➕' },
+    { id: 'model-builder', label: '모델 구축', icon: '🏗️' },
+    { id: 'evaluator-management', label: '평가자 관리', icon: '👥' },
+    { id: 'progress-monitoring', label: '진행률 모니터링', icon: '📈' },
+    { id: 'results-analysis', label: '결과 분석', icon: '📊' },
+    { id: 'export-reports', label: '보고서 내보내기', icon: '📤' },
+    { id: 'personal-settings', label: '개인 설정', icon: '⚙️' },
     { id: 'admin-type-selection', label: '모드 전환', icon: '🔄' }
   ];
 
-  const legacyAdminMenuItems = [
-    { id: 'landing', label: '시작하기', icon: '🏠' },
-    { id: 'projects', label: '프로젝트', icon: '📋' },
-    { id: 'project-creation', label: '프로젝트 생성', icon: '➕' },
-    { id: 'model-building', label: '모델 구축', icon: '🏗️' },
-    { id: 'evaluation-results', label: '평가 결과', icon: '📊' },
-    { id: 'project-completion', label: '프로젝트 완료', icon: '✅' },
-    { id: 'users', label: '사용자 관리', icon: '👥' },
-    { id: 'results', label: '기존 결과', icon: '📈' }
-  ];
-
   const evaluatorMenuItems = [
-    { id: 'evaluator-dashboard', label: '프로젝트 선택', icon: '📋' },
+    { id: 'evaluator-dashboard', label: '평가자 홈', icon: '🏠' },
+    { id: 'assigned-projects', label: '할당된 프로젝트', icon: '📋' },
     { id: 'pairwise-evaluation', label: '쌍대비교 평가', icon: '⚖️' },
     { id: 'direct-evaluation', label: '직접입력 평가', icon: '📝' },
-    { id: 'dashboard', label: '대시보드', icon: '🏠' },
-    { id: 'progress', label: '진행 현황', icon: '📈' }
+    { id: 'my-evaluations', label: '내 평가 현황', icon: '📊' },
+    { id: 'evaluation-history', label: '평가 이력', icon: '📜' },
+    { id: 'consistency-check', label: '일관성 검증', icon: '✅' },
+    { id: 'evaluation-guide', label: '평가 가이드', icon: '📖' },
+    { id: 'evaluator-settings', label: '평가자 설정', icon: '⚙️' }
+  ];
+
+  const viewerMenuItems = [
+    { id: 'viewer-dashboard', label: '조회 대시보드', icon: '👁️' },
+    { id: 'public-projects', label: '공개 프로젝트', icon: '🌐' },
+    { id: 'completed-results', label: '완료된 결과', icon: '✅' },
+    { id: 'statistics-view', label: '통계 조회', icon: '📊' },
+    { id: 'download-reports', label: '보고서 다운로드', icon: '⬇️' },
+    { id: 'help-support', label: '도움말', icon: '❓' }
   ];
 
   const getMenuItems = () => {
