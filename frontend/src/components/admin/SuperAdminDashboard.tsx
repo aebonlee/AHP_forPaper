@@ -33,6 +33,21 @@ interface SystemStats {
   storageUsed: string;
 }
 
+interface ActivityLog {
+  time: string;
+  user: string;
+  action: string;
+  type: 'evaluation' | 'navigation' | 'system' | 'admin';
+}
+
+interface SystemMetrics {
+  cpu: number;
+  memory: number;
+  responseTime: number;
+  activeConnections: number;
+  errors24h: number;
+}
+
 const SuperAdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -44,67 +59,204 @@ const SuperAdminDashboard: React.FC = () => {
     systemUptime: '0일',
     storageUsed: '0MB'
   });
+  const [recentActivity, setRecentActivity] = useState<ActivityLog[]>([]);
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
+    cpu: 0,
+    memory: 0,
+    responseTime: 0,
+    activeConnections: 0,
+    errors24h: 0
+  });
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userFormMode, setUserFormMode] = useState<'create' | 'edit' | null>(null);
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [userForm, setUserForm] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    role: 'evaluator' as 'admin' | 'evaluator',
+    status: 'active' as 'active' | 'inactive' | 'pending'
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [activityFilter, setActivityFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'projects' | 'system' | 'monitoring' | 'database' | 'audit' | 'settings' | 'backup'>('dashboard');
 
   useEffect(() => {
-    // 시스템 통계 로드
+    loadSystemData();
+    loadSystemMetrics();
+    const interval = setInterval(loadSystemMetrics, 30000); // 30초마다 시스템 메트릭 업데이트
+    const activityInterval = setInterval(() => {
+      // 실시간 활동 로그 업데이트
+      const newActivity: ActivityLog = {
+        time: new Date().toLocaleTimeString(),
+        user: Math.random() > 0.5 ? `p${String(Math.floor(Math.random() * 26) + 1).padStart(3, '0')}@evaluator.com` : 'system',
+        action: [
+          'AI 개발 활용 방안 평가 진행',
+          '쌍대비교 평가 완료',
+          '일관성 검증 통과',
+          '대시보드 조회',
+          '자동 백업 실행',
+          '성능 모니터링 업데이트'
+        ][Math.floor(Math.random() * 6)],
+        type: ['evaluation', 'navigation', 'system', 'admin'][Math.floor(Math.random() * 4)] as any
+      };
+      setRecentActivity(prev => [newActivity, ...prev.slice(0, 19)]); // 최근 20개만 보관
+    }, 45000); // 45초마다 새 활동 추가
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(activityInterval);
+    };
+  }, []);
+  
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => setMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  const loadAuditLogs = () => {
+    // 실제 감사 로그 데이터 로드 시뮬레이션
+    setAuditLogs([
+      { time: '2024-02-20 10:32:15', user: 'admin@ahp-system.com', ip: '192.168.1.100', action: '시스템 대시보드 접근', category: 'navigation', status: 'success' },
+      { time: '2024-02-20 10:31:42', user: 'p001@evaluator.com', ip: '192.168.1.101', action: 'AI 개발 활용 방안 평가 완료', category: 'evaluation', status: 'success' },
+      { time: '2024-02-20 10:30:18', user: 'p002@evaluator.com', ip: '192.168.1.102', action: '쌍대비교 평가 시작', category: 'evaluation', status: 'info' },
+      { time: '2024-02-20 10:29:55', user: 'admin@ahp-system.com', ip: '192.168.1.100', action: '프로젝트 상태 변경: active → completed', category: 'project', status: 'warning' },
+      { time: '2024-02-20 10:28:33', user: 'system', ip: '-', action: '자동 백업 실행', category: 'system', status: 'success' },
+      { time: '2024-02-20 10:27:12', user: 'admin@ahp-system.com', ip: '192.168.1.100', action: '새 사용자 생성: p027@evaluator.com', category: 'user', status: 'success' },
+      { time: '2024-02-20 10:25:45', user: 'p003@evaluator.com', ip: '192.168.1.103', action: '로그인 시도 실패', category: 'auth', status: 'error' },
+      { time: '2024-02-20 10:24:12', user: 'p004@evaluator.com', ip: '192.168.1.104', action: '일관성 검증 통과 (CR: 0.02)', category: 'evaluation', status: 'success' },
+      { time: '2024-02-20 10:23:30', user: 'admin@ahp-system.com', ip: '192.168.1.100', action: '시스템 설정 변경: 로그 보관 기간 90일', category: 'system', status: 'success' },
+      { time: '2024-02-20 10:22:18', user: 'p005@evaluator.com', ip: '192.168.1.105', action: '평가 세션 시작', category: 'evaluation', status: 'info' },
+      { time: '2024-02-20 10:21:45', user: 'system', ip: '-', action: '데이터베이스 연결 풀 최적화', category: 'system', status: 'success' },
+      { time: '2024-02-20 10:20:33', user: 'p006@evaluator.com', ip: '192.168.1.106', action: '대안 평가 완료', category: 'evaluation', status: 'success' },
+      { time: '2024-02-20 10:19:22', user: 'admin@ahp-system.com', ip: '192.168.1.100', action: '백업 설정 변경: 매주 → 매일', category: 'system', status: 'success' },
+      { time: '2024-02-20 10:18:10', user: 'p007@evaluator.com', ip: '192.168.1.107', action: '비밀번호 변경', category: 'auth', status: 'success' },
+      { time: '2024-02-20 10:17:55', user: 'system', ip: '-', action: '성능 임계치 초과 경고: CPU 85%', category: 'system', status: 'warning' }
+    ]);
+  };
+
+  const handleExportAuditLogs = () => {
+    const filteredLogs = getFilteredAuditLogs();
+    const csvContent = [
+      'Time,User,IP,Action,Category,Status',
+      ...filteredLogs.map(log => 
+        `"${log.time}","${log.user}","${log.ip}","${log.action}","${log.category}","${log.status}"`
+      )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    setMessage({ type: 'success', text: '감사 로그가 CSV 파일로 내보내졌습니다.' });
+  };
+
+  const getFilteredAuditLogs = () => {
+    return auditLogs.filter(log => {
+      const matchesUser = userFilter === 'all' || 
+        (userFilter === 'admin' && log.user.includes('admin')) ||
+        (userFilter === 'evaluator' && log.user.includes('evaluator')) ||
+        (userFilter === 'system' && log.user === 'system');
+      
+      const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
+      const matchesStatus = statusFilter2 === 'all' || log.status === statusFilter2;
+      const matchesSearch = searchQuery === '' || 
+        log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        log.ip.includes(searchQuery);
+      
+      const matchesDate = dateFilter === '' || log.time.startsWith(dateFilter);
+      
+      return matchesUser && matchesCategory && matchesStatus && matchesSearch && matchesDate;
+    });
+  };
+
+  const loadSystemData = () => {
+    loadAuditLogs();
+    // 실제 AI 프로젝트 데이터 반영
+    const startTime = new Date('2024-01-01');
+    const currentTime = new Date();
+    const uptimeDays = Math.floor((currentTime.getTime() - startTime.getTime()) / (1000 * 60 * 60 * 24));
+    
     setStats({
-      totalUsers: 127,
-      totalProjects: 23,
-      activeProjects: 8,
-      totalEvaluations: 2156,
-      systemUptime: '45일',
+      totalUsers: 27, // 26명 평가자 + 1명 관리자
+      totalProjects: 1, // AI 개발 활용 방안 프로젝트만
+      activeProjects: 1,
+      totalEvaluations: 234, // 26명 × 9개 쌍대비교
+      systemUptime: `${uptimeDays}일`,
       storageUsed: '1.2GB'
     });
 
-    // 사용자 목록 로드
+    // 26명 평가자 + 1명 관리자 로드
+    const evaluators = Array.from({ length: 26 }, (_, i) => ({
+      id: `eval-${i + 1}`,
+      first_name: `평가자${i + 1}`,
+      last_name: `P${String(i + 1).padStart(3, '0')}`,
+      email: `p${String(i + 1).padStart(3, '0')}@evaluator.com`,
+      role: 'evaluator' as const,
+      created_at: '2024-01-01T00:00:00Z',
+      last_login: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'active' as const
+    }));
+
     setUsers([
       {
-        id: '1',
-        first_name: '김',
-        last_name: '관리자',
-        email: 'admin@company.com',
+        id: 'admin-1',
+        first_name: '관리자',
+        last_name: '시스템',
+        email: 'admin@ahp-system.com',
         role: 'admin',
-        created_at: '2024-01-15',
-        last_login: '2024-02-20T10:30:00Z',
+        created_at: '2024-01-01T00:00:00Z',
+        last_login: new Date().toISOString(),
         status: 'active'
       },
+      ...evaluators
+    ]);
+
+    setProjects([
       {
-        id: '2',
-        first_name: '이',
-        last_name: '프로젝트매니저',
-        email: 'pm@company.com',
-        role: 'admin',
-        created_at: '2024-01-20',
-        last_login: '2024-02-19T15:20:00Z',
-        status: 'active'
+        id: 'ai-project-1',
+        title: '소프트웨어 개발자의 AI 활용 방안 중요도 분석',
+        description: '개발 과정에서 AI 도구 활용의 우선순위를 결정하기 위한 AHP 분석',
+        admin_id: 'admin-1',
+        status: 'active',
+        created_at: '2024-01-01T00:00:00Z',
+        evaluator_count: 26,
+        completion_rate: 100
       }
     ]);
 
-    // 프로젝트 목록 로드
-    setProjects([
-      {
-        id: '1',
-        title: 'AI 개발 활용 방안 중요도 분석',
-        description: '소프트웨어 개발자의 AI 활용 방안에 대한 중요도 분석',
-        admin_id: '1',
-        status: 'active',
-        created_at: '2024-02-01',
-        evaluator_count: 26,
-        completion_rate: 85
-      },
-      {
-        id: '2',
-        title: '신제품 출시 전략 평가',
-        description: '새로운 제품 출시를 위한 마케팅 전략 평가',
-        admin_id: '2',
-        status: 'active',
-        created_at: '2024-02-10',
-        evaluator_count: 15,
-        completion_rate: 42
-      }
+    // 최근 활동 로그
+    setRecentActivity([
+      { time: '방금 전', user: 'admin@ahp-system.com', action: '시스템 대시보드 조회', type: 'navigation' },
+      { time: '2분 전', user: 'p026@evaluator.com', action: 'AI 개발 활용 방안 평가 완료', type: 'evaluation' },
+      { time: '5분 전', user: 'p025@evaluator.com', action: '일관성 검증 통과 (CR: 0.003)', type: 'evaluation' },
+      { time: '8분 전', user: 'system', action: '자동 백업 실행 완료', type: 'system' },
+      { time: '12분 전', user: 'p024@evaluator.com', action: '쌍대비교 평가 수행', type: 'evaluation' },
+      { time: '15분 전', user: 'admin@ahp-system.com', action: '프로젝트 상태 확인', type: 'admin' },
+      { time: '18분 전', user: 'p023@evaluator.com', action: '평가 세션 시작', type: 'evaluation' },
+      { time: '22분 전', user: 'system', action: '일관성 검증 실행', type: 'system' }
     ]);
-  }, []);
+  };
+
+  const loadSystemMetrics = () => {
+    // 실시간 시스템 메트릭 시뮬레이션
+    setSystemMetrics({
+      cpu: Math.floor(Math.random() * 30) + 15, // 15-45%
+      memory: Math.floor(Math.random() * 20) + 70, // 70-90%
+      responseTime: Math.floor(Math.random() * 50) + 100, // 100-150ms
+      activeConnections: Math.floor(Math.random() * 10) + 5, // 5-15개
+      errors24h: Math.floor(Math.random() * 3) // 0-2개
+    });
+  };
 
   const renderDashboard = () => (
     <div className="space-y-6">
@@ -211,19 +363,145 @@ const SuperAdminDashboard: React.FC = () => {
     </div>
   );
 
+  const handleCreateUser = () => {
+    setUserFormMode('create');
+    setShowUserForm(true);
+    setUserForm({
+      first_name: '',
+      last_name: '',
+      email: '',
+      role: 'evaluator',
+      status: 'active'
+    });
+  };
+
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user);
+    setUserFormMode('edit');
+    setShowUserForm(true);
+    setUserForm({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      role: user.role,
+      status: user.status
+    });
+  };
+
+  const handleSaveUser = async () => {
+    setLoading(true);
+    try {
+      if (userFormMode === 'create') {
+        const newUser: User = {
+          id: `user-${Date.now()}`,
+          ...userForm,
+          created_at: new Date().toISOString(),
+          last_login: undefined
+        };
+        setUsers([...users, newUser]);
+        setMessage({ type: 'success', text: '새 사용자가 생성되었습니다.' });
+      } else if (userFormMode === 'edit' && selectedUser) {
+        setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...userForm } : u));
+        setMessage({ type: 'success', text: '사용자 정보가 수정되었습니다.' });
+      }
+      setShowUserForm(false);
+      setSelectedUser(null);
+    } catch (error) {
+      setMessage({ type: 'error', text: '작업 중 오류가 발생했습니다.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (window.confirm('정말로 이 사용자를 삭제하시겠습니까?')) {
+      setUsers(users.filter(u => u.id !== userId));
+      setMessage({ type: 'success', text: '사용자가 삭제되었습니다.' });
+    }
+  };
+
+  const handleToggleUserStatus = async (userId: string) => {
+    setUsers(users.map(u => 
+      u.id === userId 
+        ? { ...u, status: u.status === 'active' ? 'inactive' : 'active' as const }
+        : u
+    ));
+    setMessage({ type: 'success', text: '사용자 상태가 변경되었습니다.' });
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = searchTerm === '' || 
+      user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
   const renderUsers = () => (
     <div className="space-y-6">
+      {message && (
+        <div className={`p-3 rounded ${
+          message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {message.text}
+          <button 
+            onClick={() => setMessage(null)}
+            className="ml-2 text-sm underline"
+          >
+            닫기
+          </button>
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">사용자 관리</h3>
-        <Button variant="primary">
+        <Button variant="primary" onClick={handleCreateUser}>
           새 사용자 추가
         </Button>
       </div>
 
-      <Card>
+      {/* Search and Filter */}
+      <Card title="🔍 검색 및 필터">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <input
+            type="text"
+            placeholder="이름 또는 이메일 검색..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm"
+          />
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm"
+          >
+            <option value="all">모든 역할</option>
+            <option value="admin">관리자</option>
+            <option value="evaluator">평가자</option>
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm"
+          >
+            <option value="all">모든 상태</option>
+            <option value="active">활성</option>
+            <option value="inactive">비활성</option>
+            <option value="pending">대기</option>
+          </select>
+          <Button variant="secondary" size="sm">
+            📊 통계 보기
+          </Button>
+        </div>
+      </Card>
+
+      {/* User List */}
+      <Card title={`👥 사용자 목록 (${filteredUsers.length}명)`}>
         <div className="space-y-4">
-          {users.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          {filteredUsers.map((user) => (
+            <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-blue-900">
@@ -247,21 +525,135 @@ const SuperAdminDashboard: React.FC = () => {
                       {user.status === 'active' ? '활성' :
                        user.status === 'inactive' ? '비활성' : '대기'}
                     </span>
+                    {user.last_login && (
+                      <span className="text-xs text-gray-500">
+                        마지막 접속: {new Date(user.last_login).toLocaleDateString()}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <Button variant="secondary" size="sm">
-                  편집
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => handleEditUser(user)}
+                >
+                  ✏️ 편집
                 </Button>
-                <Button variant="secondary" size="sm">
-                  권한
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => handleToggleUserStatus(user.id)}
+                >
+                  {user.status === 'active' ? '⏸️ 비활성화' : '▶️ 활성화'}
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => handleDeleteUser(user.id)}
+                  className="text-red-600"
+                >
+                  🗑️ 삭제
                 </Button>
               </div>
             </div>
           ))}
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              검색 조건에 맞는 사용자가 없습니다.
+            </div>
+          )}
         </div>
       </Card>
+
+      {/* User Form Modal */}
+      {showUserForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">
+              {userFormMode === 'create' ? '새 사용자 추가' : '사용자 정보 수정'}
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">성</label>
+                <input
+                  type="text"
+                  value={userForm.first_name}
+                  onChange={(e) => setUserForm({...userForm, first_name: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  placeholder="성을 입력하세요"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                <input
+                  type="text"
+                  value={userForm.last_name}
+                  onChange={(e) => setUserForm({...userForm, last_name: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  placeholder="이름을 입력하세요"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                <input
+                  type="email"
+                  value={userForm.email}
+                  onChange={(e) => setUserForm({...userForm, email: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  placeholder="이메일을 입력하세요"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">역할</label>
+                <select
+                  value={userForm.role}
+                  onChange={(e) => setUserForm({...userForm, role: e.target.value as 'admin' | 'evaluator'})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                >
+                  <option value="evaluator">평가자</option>
+                  <option value="admin">관리자</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">상태</label>
+                <select
+                  value={userForm.status}
+                  onChange={(e) => setUserForm({...userForm, status: e.target.value as 'active' | 'inactive' | 'pending'})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                >
+                  <option value="active">활성</option>
+                  <option value="inactive">비활성</option>
+                  <option value="pending">대기</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button 
+                variant="secondary"
+                onClick={() => setShowUserForm(false)}
+                disabled={loading}
+              >
+                취소
+              </Button>
+              <Button 
+                variant="primary"
+                onClick={handleSaveUser}
+                disabled={loading || !userForm.first_name || !userForm.last_name || !userForm.email}
+              >
+                {loading ? '저장 중...' : '저장'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -395,67 +787,195 @@ const SuperAdminDashboard: React.FC = () => {
 
   const renderMonitoring = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">시스템 모니터링</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">시스템 모니터링</h3>
+        <div className="flex space-x-2">
+          <Button variant="secondary" size="sm">
+            📈 성능 리포트
+          </Button>
+          <Button variant="secondary" size="sm">
+            ⚠️ 알림 설정
+          </Button>
+          <Button variant="primary" size="sm">
+            🔄 실시간 업데이트
+          </Button>
+        </div>
+      </div>
 
+      {/* Real-time System Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card title="🔥 CPU 사용률">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">23%</div>
-            <div className="text-sm text-gray-500 mt-1">정상</div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-              <div className="bg-blue-600 h-2 rounded-full" style={{ width: '23%' }}></div>
+            <div className={`text-2xl font-bold ${
+              systemMetrics.cpu < 30 ? 'text-green-600' :
+              systemMetrics.cpu < 70 ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {systemMetrics.cpu}%
             </div>
+            <div className="text-sm text-gray-500 mt-1">
+              {systemMetrics.cpu < 30 ? '정상' : systemMetrics.cpu < 70 ? '주의' : '경고'}
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+              <div 
+                className={`h-2 rounded-full ${
+                  systemMetrics.cpu < 30 ? 'bg-green-600' :
+                  systemMetrics.cpu < 70 ? 'bg-yellow-600' : 'bg-red-600'
+                }`}
+                style={{ width: `${systemMetrics.cpu}%` }}
+              ></div>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">마지막 업데이트: 방금 전</div>
           </div>
         </Card>
 
         <Card title="💾 메모리 사용량">
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">1.8GB</div>
-            <div className="text-sm text-gray-500 mt-1">2GB 중</div>
+            <div className="text-2xl font-bold text-blue-600">{systemMetrics.memory}%</div>
+            <div className="text-sm text-gray-500 mt-1">2GB 중 {Math.round(systemMetrics.memory * 2 / 100 * 10) / 10}GB</div>
             <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-              <div className="bg-green-600 h-2 rounded-full" style={{ width: '90%' }}></div>
+              <div 
+                className="bg-blue-600 h-2 rounded-full" 
+                style={{ width: `${systemMetrics.memory}%` }}
+              ></div>
             </div>
+            <div className="text-xs text-gray-500 mt-1">마지막 업데이트: 방금 전</div>
           </div>
         </Card>
 
         <Card title="⚡ 응답 시간">
           <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600">125ms</div>
+            <div className={`text-2xl font-bold ${
+              systemMetrics.responseTime < 100 ? 'text-green-600' :
+              systemMetrics.responseTime < 300 ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {systemMetrics.responseTime}ms
+            </div>
             <div className="text-sm text-gray-500 mt-1">평균</div>
-            <div className="text-xs text-green-600 mt-2">🟢 우수</div>
+            <div className={`text-xs mt-2 ${
+              systemMetrics.responseTime < 100 ? 'text-green-600' :
+              systemMetrics.responseTime < 300 ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {systemMetrics.responseTime < 100 ? '🟢 우수' :
+               systemMetrics.responseTime < 300 ? '🟡 양호' : '🔴 느림'}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">마지막 업데이트: 방금 전</div>
           </div>
         </Card>
 
         <Card title="🌐 네트워크">
           <div className="text-center">
-            <div className="text-sm text-gray-600">송신: 2.3MB/s</div>
-            <div className="text-sm text-gray-600">수신: 1.8MB/s</div>
-            <div className="text-xs text-green-600 mt-2">🟢 정상</div>
+            <div className="text-sm text-gray-600">활성 연결: {systemMetrics.activeConnections}개</div>
+            <div className="text-sm text-gray-600">24시간 오류: {systemMetrics.errors24h}건</div>
+            <div className={`text-xs mt-2 ${
+              systemMetrics.errors24h === 0 ? 'text-green-600' :
+              systemMetrics.errors24h < 5 ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {systemMetrics.errors24h === 0 ? '🟢 정상' :
+               systemMetrics.errors24h < 5 ? '🟡 주의' : '🔴 경고'}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">마지막 업데이트: 방금 전</div>
           </div>
         </Card>
       </div>
 
-      <Card title="📊 실시간 활동 로그">
+      {/* System Performance Chart */}
+      <Card title="📈 성능 추이 (최근 24시간)">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">CPU 사용률 추이</h4>
+            <div className="h-32 bg-gray-50 rounded flex items-end justify-around p-2">
+              {Array.from({length: 24}, (_, i) => {
+                const height = Math.random() * 80 + 10;
+                return (
+                  <div key={i} className="flex flex-col items-center">
+                    <div 
+                      className="bg-blue-500 w-2 rounded-t"
+                      style={{ height: `${height}%` }}
+                      title={`${(i + 1).toString().padStart(2, '0')}:00 - ${Math.round(height)}%`}
+                    ></div>
+                    {i % 6 === 0 && (
+                      <span className="text-xs text-gray-500 mt-1">
+                        {(i + 1).toString().padStart(2, '0')}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">메모리 사용량 추이</h4>
+            <div className="h-32 bg-gray-50 rounded flex items-end justify-around p-2">
+              {Array.from({length: 24}, (_, i) => {
+                const height = Math.random() * 30 + 60;
+                return (
+                  <div key={i} className="flex flex-col items-center">
+                    <div 
+                      className="bg-green-500 w-2 rounded-t"
+                      style={{ height: `${height}%` }}
+                      title={`${(i + 1).toString().padStart(2, '0')}:00 - ${Math.round(height)}%`}
+                    ></div>
+                    {i % 6 === 0 && (
+                      <span className="text-xs text-gray-500 mt-1">
+                        {(i + 1).toString().padStart(2, '0')}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Activity Monitoring with Filters */}
+      <Card title="🔍 실시간 활동 모니터링">
+        <div className="mb-4 flex justify-between items-center">
+          <div className="flex space-x-3">
+            <select 
+              value={activityFilter}
+              onChange={(e) => setActivityFilter(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1 text-sm"
+            >
+              <option value="all">모든 활동</option>
+              <option value="evaluation">평가 활동</option>
+              <option value="navigation">내비게이션</option>
+              <option value="system">시스템</option>
+              <option value="admin">관리자</option>
+            </select>
+            <Button variant="secondary" size="sm">
+              📊 분석 보고서
+            </Button>
+          </div>
+          <div className="text-sm text-gray-500">
+            실시간 업데이트 중... (마지막: {new Date().toLocaleTimeString()})
+          </div>
+        </div>
+        
         <div className="space-y-2 max-h-80 overflow-y-auto">
-          {[
-            { time: '10:32:15', user: 'admin@company.com', action: '시스템 대시보드 조회', status: 'success' },
-            { time: '10:31:42', user: 'p001@evaluator.com', action: '평가 완료: AI 개발 활용 방안', status: 'success' },
-            { time: '10:30:18', user: 'p002@evaluator.com', action: '평가 시작: 쌍대비교', status: 'info' },
-            { time: '10:29:55', user: 'manager@company.com', action: '프로젝트 상태 변경', status: 'warning' },
-            { time: '10:28:33', user: 'system', action: '자동 백업 실행', status: 'success' }
-          ].map((log, index) => (
-            <div key={index} className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded">
+          {recentActivity
+            .filter(log => activityFilter === 'all' || log.type === activityFilter)
+            .map((log, index) => (
+            <div key={index} className="flex items-center justify-between text-xs bg-gray-50 p-3 rounded hover:bg-gray-100">
               <div className="flex items-center space-x-3">
-                <span className="text-gray-500">[{log.time}]</span>
+                <div className={`w-2 h-2 rounded-full ${
+                  log.type === 'evaluation' ? 'bg-green-500' :
+                  log.type === 'navigation' ? 'bg-blue-500' :
+                  log.type === 'system' ? 'bg-purple-500' :
+                  log.type === 'admin' ? 'bg-orange-500' : 'bg-gray-500'
+                }`}></div>
+                <span className="text-gray-500 font-mono">{log.time}</span>
                 <span className="font-medium">{log.user}</span>
-                <span>{log.action}</span>
+                <span className="text-gray-700">{log.action}</span>
               </div>
-              <span className={`px-2 py-1 rounded text-xs ${
-                log.status === 'success' ? 'bg-green-100 text-green-800' :
-                log.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-blue-100 text-blue-800'
+              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                log.type === 'evaluation' ? 'bg-green-100 text-green-800' :
+                log.type === 'navigation' ? 'bg-blue-100 text-blue-800' :
+                log.type === 'system' ? 'bg-purple-100 text-purple-800' :
+                log.type === 'admin' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'
               }`}>
-                {log.status}
+                {log.type}
               </span>
             </div>
           ))}
@@ -535,84 +1055,213 @@ const SuperAdminDashboard: React.FC = () => {
     </div>
   );
 
-  const renderAudit = () => (
-    <div className="space-y-6">
-      <h3 className="text-lg font-semibold">감사 로그</h3>
-
-      <div className="flex justify-between items-center">
-        <div className="flex space-x-4">
-          <select className="border border-gray-300 rounded px-3 py-2 text-sm">
-            <option>모든 사용자</option>
-            <option>관리자만</option>
-            <option>평가자만</option>
-          </select>
-          <select className="border border-gray-300 rounded px-3 py-2 text-sm">
-            <option>모든 활동</option>
-            <option>로그인/로그아웃</option>
-            <option>프로젝트 관리</option>
-            <option>평가 활동</option>
-            <option>시스템 설정</option>
-          </select>
-          <input 
-            type="date" 
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-            defaultValue={new Date().toISOString().split('T')[0]}
-          />
+  const renderAudit = () => {
+    const filteredLogs = getFilteredAuditLogs();
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-semibold">감사 로그</h3>
+          <div className="flex space-x-2">
+            <Button variant="secondary" size="sm" onClick={loadAuditLogs}>
+              🔄 새로고침
+            </Button>
+            <Button variant="secondary" size="sm" onClick={handleExportAuditLogs}>
+              📥 내보내기
+            </Button>
+          </div>
         </div>
-        <Button variant="secondary" size="sm">
-          📥 로그 내보내기
-        </Button>
-      </div>
 
-      <Card title="📋 활동 내역">
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {[
-            { time: '2024-02-20 10:32:15', user: 'admin@company.com', ip: '192.168.1.100', action: '시스템 대시보드 접근', category: 'navigation', status: 'success' },
-            { time: '2024-02-20 10:31:42', user: 'p001@evaluator.com', ip: '192.168.1.101', action: 'AI 개발 활용 방안 평가 완료', category: 'evaluation', status: 'success' },
-            { time: '2024-02-20 10:30:18', user: 'p002@evaluator.com', ip: '192.168.1.102', action: '쌍대비교 평가 시작', category: 'evaluation', status: 'info' },
-            { time: '2024-02-20 10:29:55', user: 'manager@company.com', ip: '192.168.1.103', action: '프로젝트 상태 변경: active → completed', category: 'project', status: 'warning' },
-            { time: '2024-02-20 10:28:33', user: 'system', ip: '-', action: '자동 백업 실행', category: 'system', status: 'success' },
-            { time: '2024-02-20 10:27:12', user: 'admin@company.com', ip: '192.168.1.100', action: '새 사용자 생성: test@example.com', category: 'user', status: 'success' },
-            { time: '2024-02-20 10:25:45', user: 'p003@evaluator.com', ip: '192.168.1.104', action: '로그인 시도 실패', category: 'auth', status: 'error' }
-          ].map((log, index) => (
-            <div key={index} className="border-l-4 border-l-blue-500 bg-gray-50 p-3 rounded-r">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 text-sm">
-                    <span className="font-medium text-gray-900">{log.user}</span>
-                    <span className="text-gray-500">({log.ip})</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      log.category === 'auth' ? 'bg-purple-100 text-purple-800' :
-                      log.category === 'evaluation' ? 'bg-green-100 text-green-800' :
-                      log.category === 'project' ? 'bg-blue-100 text-blue-800' :
-                      log.category === 'user' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {log.category}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-700 mt-1">{log.action}</div>
-                  <div className="text-xs text-gray-500 mt-1">{log.time}</div>
-                </div>
-                <span className={`px-2 py-1 rounded text-xs ${
-                  log.status === 'success' ? 'bg-green-100 text-green-800' :
-                  log.status === 'error' ? 'bg-red-100 text-red-800' :
-                  log.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-blue-100 text-blue-800'
-                }`}>
-                  {log.status}
-                </span>
+        {/* Advanced Search and Filter */}
+        <Card title="🔍 고급 검색 및 필터">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <input
+                type="text"
+                placeholder="사용자, 활동, IP 검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm"
+              />
+              <select 
+                value={userFilter}
+                onChange={(e) => setUserFilter(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm"
+              >
+                <option value="all">모든 사용자</option>
+                <option value="admin">관리자</option>
+                <option value="evaluator">평가자</option>
+                <option value="system">시스템</option>
+              </select>
+              <select 
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm"
+              >
+                <option value="all">모든 카테고리</option>
+                <option value="auth">인증</option>
+                <option value="evaluation">평가</option>
+                <option value="project">프로젝트</option>
+                <option value="user">사용자</option>
+                <option value="system">시스템</option>
+                <option value="navigation">내비게이션</option>
+              </select>
+              <select 
+                value={statusFilter2}
+                onChange={(e) => setStatusFilter2(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm"
+              >
+                <option value="all">모든 상태</option>
+                <option value="success">성공</option>
+                <option value="error">오류</option>
+                <option value="warning">경고</option>
+                <option value="info">정보</option>
+              </select>
+              <input 
+                type="date" 
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-2 text-sm"
+              />
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setUserFilter('all');
+                  setCategoryFilter('all');
+                  setStatusFilter2('all');
+                  setDateFilter('');
+                }}
+              >
+                🗑️ 초기화
+              </Button>
+            </div>
+            
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>총 {auditLogs.length}건 중 {filteredLogs.length}건 표시</span>
+              <div className="flex space-x-4">
+                <span>성공: {filteredLogs.filter(l => l.status === 'success').length}건</span>
+                <span>오류: {filteredLogs.filter(l => l.status === 'error').length}건</span>
+                <span>경고: {filteredLogs.filter(l => l.status === 'warning').length}건</span>
               </div>
             </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
+          </div>
+        </Card>
+
+        {/* Audit Log List */}
+        <Card title="📋 활동 내역">
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {filteredLogs.length > 0 ? filteredLogs.map((log, index) => (
+              <div key={index} className={`border-l-4 bg-gray-50 p-3 rounded-r hover:bg-gray-100 ${
+                log.status === 'success' ? 'border-l-green-500' :
+                log.status === 'error' ? 'border-l-red-500' :
+                log.status === 'warning' ? 'border-l-yellow-500' :
+                'border-l-blue-500'
+              }`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 text-sm">
+                      <span className="font-medium text-gray-900">{log.user}</span>
+                      <span className="text-gray-500">({log.ip})</span>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        log.category === 'auth' ? 'bg-purple-100 text-purple-800' :
+                        log.category === 'evaluation' ? 'bg-green-100 text-green-800' :
+                        log.category === 'project' ? 'bg-blue-100 text-blue-800' :
+                        log.category === 'user' ? 'bg-yellow-100 text-yellow-800' :
+                        log.category === 'system' ? 'bg-indigo-100 text-indigo-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {log.category}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-700 mt-1">{log.action}</div>
+                    <div className="text-xs text-gray-500 mt-1 font-mono">{log.time}</div>
+                  </div>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    log.status === 'success' ? 'bg-green-100 text-green-800' :
+                    log.status === 'error' ? 'bg-red-100 text-red-800' :
+                    log.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {log.status === 'success' ? '성공' :
+                     log.status === 'error' ? '오류' :
+                     log.status === 'warning' ? '경고' : '정보'}
+                  </span>
+                </div>
+              </div>
+            )) : (
+              <div className="text-center py-8 text-gray-500">
+                검색 조건에 맞는 로그가 없습니다.
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
+  const handleSaveSettings = async () => {
+    setLoading(true);
+    try {
+      // 실제 설정 저장 시뮬레이션
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setMessage({ type: 'success', text: '시스템 설정이 성공적으로 저장되었습니다.' });
+      
+      // 감사 로그에 설정 변경 기록 추가
+      const newAuditLog = {
+        time: new Date().toLocaleString(),
+        user: 'admin@ahp-system.com',
+        ip: '192.168.1.100',
+        action: '시스템 설정 변경 및 저장',
+        category: 'system',
+        status: 'success'
+      };
+      setAuditLogs(prev => [newAuditLog, ...prev]);
+    } catch (error) {
+      setMessage({ type: 'error', text: '설정 저장 중 오류가 발생했습니다.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetSettings = () => {
+    if (window.confirm('모든 설정을 기본값으로 초기화하시겠습니까?')) {
+      setSystemSettings({
+        autoBackup: true,
+        emailNotifications: true,
+        logRetention: '90',
+        sessionTimeout: '1',
+        passwordMinLength: 8,
+        loginAttemptLimit: 5,
+        apiAccessControl: true,
+        systemErrorAlerts: true,
+        backupCompleteAlerts: true,
+        performanceThresholdAlerts: false,
+        newUserSignupAlerts: true,
+        evaluationCompleteAlerts: true,
+        abnormalActivityAlerts: false,
+        backupFrequency: 'weekly',
+        backupTime: '02:00',
+        backupRetention: '90'
+      });
+      setMessage({ type: 'success', text: '설정이 기본값으로 초기화되었습니다.' });
+    }
+  };
 
   const renderSettings = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">시스템 설정</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">시스템 설정</h3>
+        <div className="flex space-x-2">
+          <Button variant="secondary" size="sm" onClick={handleResetSettings}>
+            🔄 기본값 복원
+          </Button>
+          <Button variant="secondary" size="sm">
+            📋 설정 내보내기
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="🔧 전역 설정">
@@ -620,32 +1269,53 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">자동 백업</span>
               <label className="inline-flex items-center">
-                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <input 
+                  type="checkbox" 
+                  className="form-checkbox" 
+                  checked={systemSettings.autoBackup}
+                  onChange={(e) => setSystemSettings({...systemSettings, autoBackup: e.target.checked})}
+                />
                 <span className="ml-2 text-sm">활성화</span>
               </label>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">이메일 알림</span>
               <label className="inline-flex items-center">
-                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <input 
+                  type="checkbox" 
+                  className="form-checkbox" 
+                  checked={systemSettings.emailNotifications}
+                  onChange={(e) => setSystemSettings({...systemSettings, emailNotifications: e.target.checked})}
+                />
                 <span className="ml-2 text-sm">활성화</span>
               </label>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">로그 보관 정책</span>
-              <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                <option>30일</option>
-                <option>60일</option>
-                <option selected>90일</option>
+              <select 
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+                value={systemSettings.logRetention}
+                onChange={(e) => setSystemSettings({...systemSettings, logRetention: e.target.value})}
+              >
+                <option value="30">30일</option>
+                <option value="60">60일</option>
+                <option value="90">90일</option>
+                <option value="180">180일</option>
+                <option value="365">1년</option>
               </select>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">세션 타임아웃</span>
-              <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                <option>30분</option>
-                <option selected>1시간</option>
-                <option>2시간</option>
-                <option>4시간</option>
+              <select 
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+                value={systemSettings.sessionTimeout}
+                onChange={(e) => setSystemSettings({...systemSettings, sessionTimeout: e.target.value})}
+              >
+                <option value="0.5">30분</option>
+                <option value="1">1시간</option>
+                <option value="2">2시간</option>
+                <option value="4">4시간</option>
+                <option value="8">8시간</option>
               </select>
             </div>
           </div>
@@ -655,23 +1325,42 @@ const SuperAdminDashboard: React.FC = () => {
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">비밀번호 최소 길이</span>
-              <input type="number" defaultValue="8" min="6" max="20" className="w-16 text-sm border border-gray-300 rounded px-2 py-1" />
+              <input 
+                type="number" 
+                value={systemSettings.passwordMinLength}
+                onChange={(e) => setSystemSettings({...systemSettings, passwordMinLength: parseInt(e.target.value)})}
+                min="6" 
+                max="20" 
+                className="w-16 text-sm border border-gray-300 rounded px-2 py-1" 
+              />
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">로그인 시도 제한</span>
-              <input type="number" defaultValue="5" min="3" max="10" className="w-16 text-sm border border-gray-300 rounded px-2 py-1" />
+              <input 
+                type="number" 
+                value={systemSettings.loginAttemptLimit}
+                onChange={(e) => setSystemSettings({...systemSettings, loginAttemptLimit: parseInt(e.target.value)})}
+                min="3" 
+                max="10" 
+                className="w-16 text-sm border border-gray-300 rounded px-2 py-1" 
+              />
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">API 접근 제한</span>
               <label className="inline-flex items-center">
-                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <input 
+                  type="checkbox" 
+                  className="form-checkbox" 
+                  checked={systemSettings.apiAccessControl}
+                  onChange={(e) => setSystemSettings({...systemSettings, apiAccessControl: e.target.checked})}
+                />
                 <span className="ml-2 text-sm">활성화</span>
               </label>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">IP 화이트리스트</span>
               <Button variant="secondary" size="sm">
-                관리
+                관리 (127.0.0.1, 192.168.1.*)
               </Button>
             </div>
           </div>
@@ -683,50 +1372,268 @@ const SuperAdminDashboard: React.FC = () => {
           <div className="space-y-3">
             <h4 className="font-medium text-sm">시스템 알림</h4>
             <label className="flex items-center">
-              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <input 
+                type="checkbox" 
+                className="form-checkbox" 
+                checked={systemSettings.systemErrorAlerts}
+                onChange={(e) => setSystemSettings({...systemSettings, systemErrorAlerts: e.target.checked})}
+              />
               <span className="ml-2 text-sm">시스템 오류</span>
             </label>
             <label className="flex items-center">
-              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <input 
+                type="checkbox" 
+                className="form-checkbox" 
+                checked={systemSettings.backupCompleteAlerts}
+                onChange={(e) => setSystemSettings({...systemSettings, backupCompleteAlerts: e.target.checked})}
+              />
               <span className="ml-2 text-sm">백업 완료</span>
             </label>
             <label className="flex items-center">
-              <input type="checkbox" className="form-checkbox" />
+              <input 
+                type="checkbox" 
+                className="form-checkbox" 
+                checked={systemSettings.performanceThresholdAlerts}
+                onChange={(e) => setSystemSettings({...systemSettings, performanceThresholdAlerts: e.target.checked})}
+              />
               <span className="ml-2 text-sm">성능 임계치 초과</span>
             </label>
           </div>
           <div className="space-y-3">
             <h4 className="font-medium text-sm">사용자 알림</h4>
             <label className="flex items-center">
-              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <input 
+                type="checkbox" 
+                className="form-checkbox" 
+                checked={systemSettings.newUserSignupAlerts}
+                onChange={(e) => setSystemSettings({...systemSettings, newUserSignupAlerts: e.target.checked})}
+              />
               <span className="ml-2 text-sm">새 사용자 가입</span>
             </label>
             <label className="flex items-center">
-              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <input 
+                type="checkbox" 
+                className="form-checkbox" 
+                checked={systemSettings.evaluationCompleteAlerts}
+                onChange={(e) => setSystemSettings({...systemSettings, evaluationCompleteAlerts: e.target.checked})}
+              />
               <span className="ml-2 text-sm">평가 완료</span>
             </label>
             <label className="flex items-center">
-              <input type="checkbox" className="form-checkbox" />
+              <input 
+                type="checkbox" 
+                className="form-checkbox" 
+                checked={systemSettings.abnormalActivityAlerts}
+                onChange={(e) => setSystemSettings({...systemSettings, abnormalActivityAlerts: e.target.checked})}
+              />
               <span className="ml-2 text-sm">비정상 활동 감지</span>
             </label>
           </div>
         </div>
       </Card>
 
+      <Card title="💾 백업 설정">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">백업 주기</label>
+            <select 
+              className="w-full text-sm border border-gray-300 rounded px-3 py-2"
+              value={systemSettings.backupFrequency}
+              onChange={(e) => setSystemSettings({...systemSettings, backupFrequency: e.target.value})}
+            >
+              <option value="daily">매일</option>
+              <option value="weekly">매주</option>
+              <option value="monthly">매월</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">백업 시간</label>
+            <input 
+              type="time" 
+              value={systemSettings.backupTime}
+              onChange={(e) => setSystemSettings({...systemSettings, backupTime: e.target.value})}
+              className="w-full text-sm border border-gray-300 rounded px-3 py-2" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">보관 기간</label>
+            <select 
+              className="w-full text-sm border border-gray-300 rounded px-3 py-2"
+              value={systemSettings.backupRetention}
+              onChange={(e) => setSystemSettings({...systemSettings, backupRetention: e.target.value})}
+            >
+              <option value="7">7일</option>
+              <option value="30">30일</option>
+              <option value="90">90일</option>
+              <option value="365">1년</option>
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      <Card title="📊 현재 설정 상태">
+        <div className="bg-gray-50 p-4 rounded">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="font-medium">자동 백업:</span>
+              <span className={systemSettings.autoBackup ? 'text-green-600 ml-1' : 'text-red-600 ml-1'}>
+                {systemSettings.autoBackup ? '활성화' : '비활성화'}
+              </span>
+            </div>
+            <div>
+              <span className="font-medium">세션 타임아웃:</span>
+              <span className="ml-1">{systemSettings.sessionTimeout}시간</span>
+            </div>
+            <div>
+              <span className="font-medium">로그 보관:</span>
+              <span className="ml-1">{systemSettings.logRetention}일</span>
+            </div>
+            <div>
+              <span className="font-medium">백업 주기:</span>
+              <span className="ml-1">
+                {systemSettings.backupFrequency === 'daily' ? '매일' :
+                 systemSettings.backupFrequency === 'weekly' ? '매주' : '매월'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       <div className="flex justify-end space-x-3">
-        <Button variant="secondary">
+        <Button variant="secondary" disabled={loading}>
           취소
         </Button>
-        <Button variant="primary">
-          설정 저장
+        <Button variant="primary" onClick={handleSaveSettings} disabled={loading}>
+          {loading ? '저장 중...' : '💾 설정 저장 및 적용'}
         </Button>
       </div>
     </div>
   );
 
+  const [backupProgress, setBackupProgress] = useState(0);
+  const [backupInProgress, setBackupInProgress] = useState(false);
+  const [backupFiles, setBackupFiles] = useState([
+    { date: '2024-02-20 02:00', size: '1.2GB', type: 'auto', status: 'success', id: 'backup-1' },
+    { date: '2024-02-19 15:30', size: '1.1GB', type: 'manual', status: 'success', id: 'backup-2' },
+    { date: '2024-02-19 02:00', size: '1.1GB', type: 'auto', status: 'success', id: 'backup-3' },
+    { date: '2024-02-18 02:00', size: '1.0GB', type: 'auto', status: 'success', id: 'backup-4' },
+    { date: '2024-02-17 02:00', size: '980MB', type: 'auto', status: 'failed', id: 'backup-5' }
+  ]);
+
+  const handleManualBackup = async () => {
+    setBackupInProgress(true);
+    setBackupProgress(0);
+    
+    try {
+      // 백업 진행 시뮬레이션
+      for (let i = 0; i <= 100; i += 10) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        setBackupProgress(i);
+      }
+      
+      // 새 백업 파일 추가
+      const newBackup = {
+        date: new Date().toLocaleString(),
+        size: `${(Math.random() * 0.5 + 1).toFixed(1)}GB`,
+        type: 'manual' as const,
+        status: 'success' as const,
+        id: `backup-${Date.now()}`
+      };
+      
+      setBackupFiles(prev => [newBackup, ...prev]);
+      setMessage({ type: 'success', text: '수동 백업이 성공적으로 완료되었습니다.' });
+      
+      // 감사 로그에 백업 기록 추가
+      const newAuditLog = {
+        time: new Date().toLocaleString(),
+        user: 'admin@ahp-system.com',
+        ip: '192.168.1.100',
+        action: '수동 백업 실행 완료',
+        category: 'system',
+        status: 'success'
+      };
+      setAuditLogs(prev => [newAuditLog, ...prev]);
+      
+    } catch (error) {
+      setMessage({ type: 'error', text: '백업 실행 중 오류가 발생했습니다.' });
+    } finally {
+      setBackupInProgress(false);
+      setBackupProgress(0);
+    }
+  };
+
+  const handleDownloadBackup = (backupId: string) => {
+    const backup = backupFiles.find(b => b.id === backupId);
+    if (backup) {
+      setMessage({ type: 'success', text: `백업 파일 ${backup.date} (${backup.size}) 다운로드를 시작했습니다.` });
+      
+      // 실제 다운로드 시뮬레이션
+      const link = document.createElement('a');
+      link.href = '#';
+      link.download = `ahp_backup_${backup.date.replace(/[\s:]/g, '_')}.sql`;
+      link.click();
+    }
+  };
+
+  const handleRestoreBackup = (backupId: string) => {
+    const backup = backupFiles.find(b => b.id === backupId);
+    if (backup && window.confirm(`백업 파일 ${backup.date}로 시스템을 복원하시겠습니까?\n\n⚠️ 현재 데이터가 모두 삭제되고 백업 시점으로 되돌아갑니다.`)) {
+      setMessage({ type: 'success', text: `백업 파일 ${backup.date}로 복원을 시작했습니다. 잠시 후 시스템이 재시작됩니다.` });
+      
+      // 감사 로그에 복원 기록 추가
+      const newAuditLog = {
+        time: new Date().toLocaleString(),
+        user: 'admin@ahp-system.com',
+        ip: '192.168.1.100',
+        action: `시스템 복원 실행: ${backup.date}`,
+        category: 'system',
+        status: 'warning'
+      };
+      setAuditLogs(prev => [newAuditLog, ...prev]);
+    }
+  };
+
+  const handleDeleteBackup = (backupId: string) => {
+    const backup = backupFiles.find(b => b.id === backupId);
+    if (backup && window.confirm(`백업 파일 ${backup.date}를 삭제하시겠습니까?`)) {
+      setBackupFiles(prev => prev.filter(b => b.id !== backupId));
+      setMessage({ type: 'success', text: '백업 파일이 삭제되었습니다.' });
+    }
+  };
+
   const renderBackup = () => (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">백업 및 복원</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">백업 및 복원</h3>
+        <div className="flex space-x-2">
+          <Button variant="secondary" size="sm">
+            📊 백업 통계
+          </Button>
+          <Button variant="secondary" size="sm">
+            📋 백업 스케줄
+          </Button>
+        </div>
+      </div>
+
+      {backupInProgress && (
+        <Card title="🔄 백업 진행 중">
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span>백업 진행률</span>
+              <span>{backupProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                className="bg-blue-600 h-3 rounded-full transition-all duration-300" 
+                style={{ width: `${backupProgress}%` }}
+              ></div>
+            </div>
+            <div className="text-xs text-gray-500">
+              데이터베이스 백업 중... 잠시만 기다려주세요.
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="⚡ 즉시 백업">
@@ -736,24 +1643,33 @@ const SuperAdminDashboard: React.FC = () => {
             </div>
             <div className="space-y-2">
               <label className="flex items-center">
-                <input type="checkbox" className="form-checkbox" defaultChecked />
-                <span className="ml-2 text-sm">사용자 데이터</span>
+                <input type="checkbox" className="form-checkbox" defaultChecked disabled />
+                <span className="ml-2 text-sm">사용자 데이터 (27명)</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked disabled />
+                <span className="ml-2 text-sm">프로젝트 데이터 (1개)</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked disabled />
+                <span className="ml-2 text-sm">평가 결과 (234건)</span>
               </label>
               <label className="flex items-center">
                 <input type="checkbox" className="form-checkbox" defaultChecked />
-                <span className="ml-2 text-sm">프로젝트 데이터</span>
-              </label>
-              <label className="flex items-center">
-                <input type="checkbox" className="form-checkbox" defaultChecked />
-                <span className="ml-2 text-sm">평가 결과</span>
-              </label>
-              <label className="flex items-center">
-                <input type="checkbox" className="form-checkbox" />
                 <span className="ml-2 text-sm">시스템 설정</span>
               </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">감사 로그</span>
+              </label>
             </div>
-            <Button variant="primary" className="w-full">
-              💾 지금 백업 실행
+            <Button 
+              variant="primary" 
+              className="w-full" 
+              onClick={handleManualBackup}
+              disabled={backupInProgress}
+            >
+              {backupInProgress ? '백업 실행 중...' : '💾 지금 백업 실행'}
             </Button>
           </div>
         </Card>
@@ -763,45 +1679,87 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">자동 백업</span>
               <label className="inline-flex items-center">
-                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <input 
+                  type="checkbox" 
+                  className="form-checkbox" 
+                  checked={systemSettings.autoBackup}
+                  onChange={(e) => setSystemSettings({...systemSettings, autoBackup: e.target.checked})}
+                />
                 <span className="ml-2 text-sm">활성화</span>
               </label>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">백업 주기</span>
-              <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                <option>매일</option>
-                <option selected>매주</option>
-                <option>매월</option>
+              <select 
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+                value={systemSettings.backupFrequency}
+                onChange={(e) => setSystemSettings({...systemSettings, backupFrequency: e.target.value})}
+              >
+                <option value="daily">매일</option>
+                <option value="weekly">매주</option>
+                <option value="monthly">매월</option>
               </select>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">백업 시간</span>
-              <input type="time" defaultValue="02:00" className="text-sm border border-gray-300 rounded px-2 py-1" />
+              <input 
+                type="time" 
+                value={systemSettings.backupTime}
+                onChange={(e) => setSystemSettings({...systemSettings, backupTime: e.target.value})}
+                className="text-sm border border-gray-300 rounded px-2 py-1" 
+              />
             </div>
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">보관 기간</span>
-              <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                <option>7일</option>
-                <option>30일</option>
-                <option selected>90일</option>
-                <option>1년</option>
+              <select 
+                className="text-sm border border-gray-300 rounded px-2 py-1"
+                value={systemSettings.backupRetention}
+                onChange={(e) => setSystemSettings({...systemSettings, backupRetention: e.target.value})}
+              >
+                <option value="7">7일</option>
+                <option value="30">30일</option>
+                <option value="90">90일</option>
+                <option value="365">1년</option>
               </select>
+            </div>
+            <div className="bg-blue-50 p-3 rounded text-sm">
+              <div className="font-medium text-blue-800">다음 자동 백업</div>
+              <div className="text-blue-600">
+                {systemSettings.backupFrequency === 'daily' ? '내일' :
+                 systemSettings.backupFrequency === 'weekly' ? '다음 주 월요일' : '다음 달 1일'} {systemSettings.backupTime}
+              </div>
             </div>
           </div>
         </Card>
       </div>
 
+      <Card title="📊 백업 현황">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">{backupFiles.filter(b => b.status === 'success').length}</div>
+            <div className="text-sm text-gray-500">성공한 백업</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-red-600">{backupFiles.filter(b => b.status === 'failed').length}</div>
+            <div className="text-sm text-gray-500">실패한 백업</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {backupFiles.reduce((total, backup) => total + parseFloat(backup.size.replace('GB', '').replace('MB', '0.')), 0).toFixed(1)}GB
+            </div>
+            <div className="text-sm text-gray-500">총 백업 크기</div>
+          </div>
+          <div className="text-center">
+            <div className="text-2xl font-bold text-purple-600">{backupFiles.filter(b => b.type === 'manual').length}</div>
+            <div className="text-sm text-gray-500">수동 백업</div>
+          </div>
+        </div>
+      </Card>
+
       <Card title="📥 백업 파일 목록">
         <div className="space-y-3">
-          {[
-            { date: '2024-02-20 02:00', size: '1.2GB', type: 'auto', status: 'success' },
-            { date: '2024-02-19 15:30', size: '1.1GB', type: 'manual', status: 'success' },
-            { date: '2024-02-19 02:00', size: '1.1GB', type: 'auto', status: 'success' },
-            { date: '2024-02-18 02:00', size: '1.0GB', type: 'auto', status: 'success' },
-            { date: '2024-02-17 02:00', size: '980MB', type: 'auto', status: 'failed' }
-          ].map((backup, index) => (
-            <div key={index} className="flex justify-between items-center p-3 border rounded">
+          {backupFiles.map((backup) => (
+            <div key={backup.id} className="flex justify-between items-center p-3 border rounded hover:bg-gray-50">
               <div className="flex items-center space-x-4">
                 <div className={`w-3 h-3 rounded-full ${
                   backup.status === 'success' ? 'bg-green-500' :
@@ -809,22 +1767,47 @@ const SuperAdminDashboard: React.FC = () => {
                 }`}></div>
                 <div>
                   <div className="text-sm font-medium">{backup.date}</div>
-                  <div className="text-xs text-gray-500">{backup.size} · {backup.type === 'auto' ? '자동' : '수동'}</div>
+                  <div className="text-xs text-gray-500">
+                    {backup.size} · {backup.type === 'auto' ? '자동' : '수동'} · 
+                    {backup.status === 'success' ? ' 성공' : backup.status === 'failed' ? ' 실패' : ' 진행중'}
+                  </div>
                 </div>
               </div>
               <div className="flex space-x-2">
-                <Button variant="secondary" size="sm">
-                  📥 다운로드
-                </Button>
-                <Button variant="secondary" size="sm">
-                  🔄 복원
-                </Button>
-                <Button variant="secondary" size="sm" className="text-red-600">
+                {backup.status === 'success' && (
+                  <>
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => handleDownloadBackup(backup.id)}
+                    >
+                      📥 다운로드
+                    </Button>
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={() => handleRestoreBackup(backup.id)}
+                    >
+                      🔄 복원
+                    </Button>
+                  </>
+                )}
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="text-red-600"
+                  onClick={() => handleDeleteBackup(backup.id)}
+                >
                   🗑️ 삭제
                 </Button>
               </div>
             </div>
           ))}
+          {backupFiles.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              백업 파일이 없습니다. 첫 번째 백업을 실행해보세요.
+            </div>
+          )}
         </div>
       </Card>
     </div>
