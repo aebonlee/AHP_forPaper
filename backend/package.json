@@ -7,6 +7,7 @@
     "dev": "nodemon src/index.ts",
     "build": "tsc --skipLibCheck",
     "copy-files": "node copy-files.js || true",
+    "migrate": "node -e \"require('./dist/database/migrate.js').runMigrations()\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
