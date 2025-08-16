@@ -8,6 +8,8 @@ import ModelFinalization from './ModelFinalization';
 import SubscriptionDashboard from '../subscription/SubscriptionDashboard';
 import AdvancedResultsAnalysis from '../analysis/AdvancedResultsAnalysis';
 import InteractiveCharts from '../visualization/InteractiveCharts';
+import WorkshopManager from '../workshop/WorkshopManager';
+import DecisionSupportSystem from '../decision/DecisionSupportSystem';
 import { ExtendedUser } from '../../types/subscription';
 
 interface PersonalServiceProps {
@@ -58,7 +60,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
     objective: '',
     evaluation_method: 'pairwise' as 'pairwise' | 'direct' | 'mixed'
   });
-  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'projects' | 'creation' | 'model-builder' | 'evaluators' | 'monitoring' | 'analysis' | 'export' | 'settings'>(
+  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'projects' | 'creation' | 'model-builder' | 'evaluators' | 'monitoring' | 'analysis' | 'export' | 'workshop' | 'decision-support' | 'settings'>(
     externalActiveTab === 'personal-service' ? 'dashboard' :
     externalActiveTab === 'my-projects' ? 'projects' :
     externalActiveTab === 'project-creation' ? 'creation' :
@@ -1672,6 +1674,10 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
         return renderResultsAnalysis();
       case 'export':
         return renderExportReports();
+      case 'workshop':
+        return <WorkshopManager className="space-y-6" />;
+      case 'decision-support':
+        return <DecisionSupportSystem className="space-y-6" />;
       case 'settings':
         return renderPersonalSettings();
       default:
@@ -1754,8 +1760,8 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
               { id: 'evaluators', label: '평가자 관리', icon: '👥', desc: '참여자 초대' },
               { id: 'monitoring', label: '진행률 모니터링', icon: '📈', desc: '실시간 추적' },
               { id: 'analysis', label: '결과 분석', icon: '📊', desc: '순위 및 일관성' },
-              { id: 'export', label: '보고서 내보내기', icon: '📤', desc: 'Excel/PDF/PPT' },
-              { id: 'settings', label: '개인 설정', icon: '⚙️', desc: '계정 및 환경' }
+              { id: 'workshop', label: '워크숍 관리', icon: '🎯', desc: '협업 의사결정' },
+              { id: 'decision-support', label: '의사결정 지원', icon: '🧠', desc: '과학적 분석' }
             ].map((item) => (
               <button
                 key={item.id}
@@ -1771,6 +1777,30 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
                 <div className="text-2xl mb-2">{item.icon}</div>
                 <div className="font-medium text-sm">{item.label}</div>
                 <div className="text-xs text-gray-500 mt-1">{item.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Third Row - Export & Settings */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+            {[
+              { id: 'export', label: '보고서 내보내기', icon: '📤', desc: 'Excel/PDF/PPT' },
+              { id: 'settings', label: '개인 설정', icon: '⚙️', desc: '계정 및 환경' }
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleTabChange(item.id)}
+                aria-label={`${item.label} - ${item.desc}`}
+                aria-pressed={activeMenu === item.id}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                  activeMenu === item.id
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                }`}
+              >
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <div className="font-medium mb-1">{item.label}</div>
+                <div className="text-xs text-gray-500">{item.desc}</div>
               </button>
             ))}
           </div>
