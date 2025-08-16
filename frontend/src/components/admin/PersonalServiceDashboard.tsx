@@ -962,38 +962,63 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="border-b border-gray-200 bg-white rounded-t-lg">
-        <nav className="-mb-px flex space-x-4 overflow-x-auto px-6 pt-4">
-          {[
-            { id: 'dashboard', label: '대시보드', icon: '🏠' },
-            { id: 'projects', label: '내 프로젝트', icon: '📂' },
-            { id: 'creation', label: '새 프로젝트', icon: '➕' },
-            { id: 'model-builder', label: '모델 구축', icon: '🏗️' },
-            { id: 'evaluators', label: '평가자 관리', icon: '👥' },
-            { id: 'monitoring', label: '진행률 모니터링', icon: '📈' },
-            { id: 'analysis', label: '결과 분석', icon: '📊' },
-            { id: 'export', label: '보고서 내보내기', icon: '📤' },
-            { id: 'settings', label: '개인 설정', icon: '⚙️' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveMenu(tab.id as any)}
-              className={`py-2 px-3 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeMenu === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.icon} {tab.label}
-            </button>
-          ))}
-        </nav>
+      {/* Navigation Menu - 2 Row Button Layout */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="space-y-4">
+          {/* First Row - Main Actions */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { id: 'dashboard', label: '대시보드', icon: '🏠', desc: '프로젝트 현황' },
+              { id: 'projects', label: '내 프로젝트', icon: '📂', desc: '프로젝트 관리' },
+              { id: 'creation', label: '새 프로젝트', icon: '➕', desc: '프로젝트 생성' },
+              { id: 'model-builder', label: '모델 구축', icon: '🏗️', desc: '단계별 구성' }
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveMenu(item.id as any)}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                  activeMenu === item.id
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                }`}
+              >
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <div className="font-medium text-sm">{item.label}</div>
+                <div className="text-xs text-gray-500 mt-1">{item.desc}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* Second Row - Analysis & Settings */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { id: 'evaluators', label: '평가자 관리', icon: '👥', desc: '참여자 초대' },
+              { id: 'monitoring', label: '진행률 모니터링', icon: '📈', desc: '실시간 추적' },
+              { id: 'analysis', label: '결과 분석', icon: '📊', desc: '순위 및 일관성' },
+              { id: 'export', label: '보고서 내보내기', icon: '📤', desc: 'Excel/PDF/PPT' },
+              { id: 'settings', label: '개인 설정', icon: '⚙️', desc: '계정 및 환경' }
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveMenu(item.id as any)}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
+                  activeMenu === item.id
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                }`}
+              >
+                <div className="text-2xl mb-2">{item.icon}</div>
+                <div className="font-medium text-sm">{item.label}</div>
+                <div className="text-xs text-gray-500 mt-1">{item.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Progress Bar (only show when in model builder flow) */}
       {activeMenu === 'model-builder' && currentStep !== 'overview' && (
-        <div className="bg-white border-x border-gray-200 p-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-medium text-gray-900">모델 구축 진행상황</h3>
             <span className="text-sm text-gray-600">{Math.round(getStepProgress())}% 완료</span>
@@ -1015,7 +1040,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
       )}
 
       {/* Main Content */}
-      <div className="bg-white rounded-b-lg border border-gray-200">
+      <div className="bg-white rounded-lg border border-gray-200">
         <div className="p-6">
           {renderMenuContent()}
         </div>
