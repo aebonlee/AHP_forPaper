@@ -43,14 +43,17 @@ router.get('/', auth_1.authenticateToken, async (req, res) => {
       LEFT JOIN users u ON p.admin_id = u.id
     `;
         let params = [];
+        // Filter out old sample projects
+        let whereConditions = [`p.title NOT IN ('스마트폰 선택 평가', '직원 채용 평가', '투자 포트폴리오 선택')`];
         if (userRole === 'evaluator') {
-            queryText += ` WHERE p.admin_id = $1 OR pe.evaluator_id = $1`;
+            whereConditions.push(`(p.admin_id = $1 OR pe.evaluator_id = $1)`);
             params = [userId];
         }
         else {
-            queryText += ` WHERE p.admin_id = $1`;
+            whereConditions.push(`p.admin_id = $1`);
             params = [userId];
         }
+        queryText += ` WHERE ` + whereConditions.join(' AND ');
         queryText += ` GROUP BY p.id, u.first_name, u.last_name ORDER BY p.created_at DESC`;
         const result = await (0, connection_1.query)(queryText, params);
         res.json({ projects: result.rows });
@@ -69,7 +72,7 @@ router.get('/:id', auth_1.authenticateToken, async (req, res) => {
       SELECT p.*, u.first_name || ' ' || u.last_name as admin_name
       FROM projects p
       LEFT JOIN users u ON p.admin_id = u.id
-      WHERE p.id = $1
+      WHERE p.id = $1 AND p.title NOT IN ('스마트폰 선택 평가', '직원 채용 평가', '투자 포트폴리오 선택')
     `;
         let params = [id];
         if (userRole === 'evaluator') {
