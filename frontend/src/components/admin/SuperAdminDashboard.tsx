@@ -119,7 +119,7 @@ const SuperAdminDashboard: React.FC = () => {
     backupFrequency: 'weekly',
     backupTime: '02:00'
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'projects' | 'system' | 'monitoring' | 'database' | 'audit' | 'settings' | 'backup'>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('dashboard');
 
   useEffect(() => {
     loadSystemData();
@@ -342,28 +342,28 @@ const SuperAdminDashboard: React.FC = () => {
           </div>
         </Card>
 
-        <Card title="📈 최근 활동">
-          <div className="space-y-3">
-            <div className="text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">신규 가입</span>
-                <span className="font-semibold">+12명</span>
+        <Card title="📈 실시간 활동 모니터">
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {recentActivity.slice(0, 8).map((activity, index) => (
+              <div key={index} className="flex items-center justify-between text-sm py-2 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 rounded px-2 cursor-pointer transition-colors">
+                <div className="flex items-center space-x-2">
+                  <span className={`w-2 h-2 rounded-full animate-pulse ${
+                    activity.type === 'evaluation' ? 'bg-green-500' :
+                    activity.type === 'navigation' ? 'bg-blue-500' :
+                    activity.type === 'system' ? 'bg-yellow-500' : 'bg-purple-500'
+                  }`}></span>
+                  <span className="text-gray-700 font-medium">{activity.action}</span>
+                </div>
+                <div className="text-xs text-gray-500 text-right">
+                  <div className="font-medium">{activity.user}</div>
+                  <div className="text-green-600">{activity.time}</div>
+                </div>
               </div>
-              <div className="text-xs text-gray-500">지난 7일</div>
-            </div>
-            <div className="text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">프로젝트 생성</span>
-                <span className="font-semibold">+3개</span>
-              </div>
-              <div className="text-xs text-gray-500">지난 7일</div>
-            </div>
-            <div className="text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">완료된 평가</span>
-                <span className="font-semibold">+284건</span>
-              </div>
-              <div className="text-xs text-gray-500">지난 7일</div>
+            ))}
+            <div className="text-center pt-3 border-t">
+              <Button variant="secondary" size="sm" onClick={() => setActiveTab('audit')}>
+                📝 전체 로그 보기
+              </Button>
             </div>
           </div>
         </Card>
@@ -476,114 +476,27 @@ const SuperAdminDashboard: React.FC = () => {
   });
 
   const renderUsers = () => (
-    <div className="min-h-screen bg-gray-50">
-      {/* Fixed Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <button 
-                  onClick={() => setActiveTab('dashboard')}
-                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-xl"
-                  title="대시보드로 돌아가기"
-                >
-                  ←
-                </button>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                    <span className="text-4xl mr-3">👥</span>
-                    사용자 관리
-                  </h1>
-                  <p className="text-gray-600 mt-2">시스템 사용자 계정 및 권한을 관리합니다</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={() => {
-                    const stats = {
-                      총사용자: users.length,
-                      관리자: users.filter(u => u.role === 'admin').length,
-                      평가자: users.filter(u => u.role === 'evaluator').length,
-                      활성사용자: users.filter(u => u.status === 'active').length,
-                      비활성사용자: users.filter(u => u.status === 'inactive').length
-                    };
-                    alert(`📊 사용자 통계\n\n${Object.entries(stats).map(([key, value]) => `${key}: ${value}명`).join('\n')}`);
-                  }}
-                >
-                  📊 사용자 리포트
-                </Button>
-                <Button variant="primary" onClick={handleCreateUser}>
-                  ➕ 새 사용자 추가
-                </Button>
-              </div>
-            </div>
-          </div>
+    <div className="space-y-6">
+      {message && (
+        <div className={`p-3 rounded ${
+          message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {message.text}
+          <button 
+            onClick={() => setMessage(null)}
+            className="ml-2 text-sm underline"
+          >
+            닫기
+          </button>
         </div>
+      )}
+
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">사용자 관리</h3>
+        <Button variant="primary" onClick={handleCreateUser}>
+          새 사용자 추가
+        </Button>
       </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          {/* Status Message */}
-          {message && (
-            <div className={`p-4 rounded-lg border shadow-sm ${
-              message.type === 'success' 
-                ? 'bg-green-50 border-green-200 text-green-800' 
-                : 'bg-red-50 border-red-200 text-red-800'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <span className="text-lg mr-2">
-                    {message.type === 'success' ? '✅' : '❌'}
-                  </span>
-                  <span className="font-medium">{message.text}</span>
-                </div>
-                <button 
-                  onClick={() => setMessage(null)}
-                  className="text-sm underline hover:no-underline"
-                >
-                  닫기
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Statistics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card title="👥 전체 사용자">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{users.length}</div>
-                <div className="text-sm text-gray-500 mt-1">총 등록 사용자</div>
-              </div>
-            </Card>
-            <Card title="👨‍💼 관리자">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">
-                  {users.filter(u => u.role === 'admin').length}
-                </div>
-                <div className="text-sm text-gray-500 mt-1">시스템 관리자</div>
-              </div>
-            </Card>
-            <Card title="👨‍💻 평가자">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">
-                  {users.filter(u => u.role === 'evaluator').length}
-                </div>
-                <div className="text-sm text-gray-500 mt-1">평가 참여자</div>
-              </div>
-            </Card>
-            <Card title="✅ 활성 사용자">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600">
-                  {users.filter(u => u.status === 'active').length}
-                </div>
-                <div className="text-sm text-gray-500 mt-1">현재 활성화</div>
-              </div>
-            </Card>
-          </div>
 
       {/* Search and Filter */}
       <Card title="🔍 검색 및 필터">
@@ -614,7 +527,20 @@ const SuperAdminDashboard: React.FC = () => {
             <option value="inactive">비활성</option>
             <option value="pending">대기</option>
           </select>
-          <Button variant="secondary" size="sm">
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={() => {
+              const stats = {
+                총사용자: users.length,
+                관리자: users.filter(u => u.role === 'admin').length,
+                평가자: users.filter(u => u.role === 'evaluator').length,
+                활성사용자: users.filter(u => u.status === 'active').length,
+                비활성사용자: users.filter(u => u.status === 'inactive').length
+              };
+              alert(`📊 사용자 통계\n\n${Object.entries(stats).map(([key, value]) => `${key}: ${value}명`).join('\n')}`);
+            }}
+          >
             📊 통계 보기
           </Button>
         </div>
@@ -785,11 +711,37 @@ const SuperAdminDashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">프로젝트 관리</h3>
         <div className="flex space-x-2">
-          <Button variant="secondary">
-            내보내기
+          <Button 
+            variant="secondary"
+            onClick={() => {
+              const projectData = projects.map(p => ({
+                제목: p.title,
+                설명: p.description,
+                상태: p.status,
+                참여자수: p.evaluator_count,
+                진행률: `${p.completion_rate}%`,
+                생성일: p.created_at
+              }));
+              const csvContent = [
+                Object.keys(projectData[0]).join(','),
+                ...projectData.map(p => Object.values(p).join(','))
+              ].join('\n');
+              const blob = new Blob([csvContent], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `프로젝트_목록_${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              setMessage({ type: 'success', text: '프로젝트 목록이 CSV 파일로 내보내어졌습니다.' });
+            }}
+          >
+            📥 내보내기
           </Button>
-          <Button variant="primary">
-            새 프로젝트
+          <Button 
+            variant="primary"
+            onClick={() => alert('🆕 새 프로젝트 생성\n\n현재 데모 모드에서는 AI 개발 활용 방안 프로젝트만 제공됩니다.\n\n실제 운영 환경에서는 이 버튼을 통해 새로운 AHP 프로젝트를 생성할 수 있습니다.')}
+          >
+            ➕ 새 프로젝트
           </Button>
         </div>
       </div>
@@ -913,13 +865,31 @@ const SuperAdminDashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">시스템 모니터링</h3>
         <div className="flex space-x-2">
-          <Button variant="secondary" size="sm">
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={() => {
+              const report = `📈 시스템 성능 리포트\n\n• CPU 사용률: ${systemMetrics.cpu}% (${systemMetrics.cpu < 30 ? '정상' : systemMetrics.cpu < 70 ? '주의' : '경고'})\n• 메모리 사용량: ${systemMetrics.memory}% (${Math.round(systemMetrics.memory * 2 / 100 * 10) / 10}GB/2GB)\n• 응답 시간: ${systemMetrics.responseTime}ms\n• 활성 연결: ${systemMetrics.activeConnections}개\n• 24시간 오류: ${systemMetrics.errors24h}건\n\n생성 시간: ${new Date().toLocaleString()}`;
+              alert(report);
+            }}
+          >
             📈 성능 리포트
           </Button>
-          <Button variant="secondary" size="sm">
+          <Button 
+            variant="secondary" 
+            size="sm"
+            onClick={() => alert('⚠️ 알림 설정\n\n• CPU 사용률 80% 이상: 활성화\n• 메모리 사용량 90% 이상: 활성화\n• 응답 시간 200ms 이상: 활성화\n• 일일 오류 10건 이상: 활성화\n\n이메일 알림: admin@ahp-system.com')}
+          >
             ⚠️ 알림 설정
           </Button>
-          <Button variant="primary" size="sm">
+          <Button 
+            variant="primary" 
+            size="sm"
+            onClick={() => {
+              loadSystemMetrics();
+              setMessage({ type: 'success', text: '시스템 메트릭이 업데이트되었습니다.' });
+            }}
+          >
             🔄 실시간 업데이트
           </Button>
         </div>
@@ -1186,11 +1156,28 @@ const SuperAdminDashboard: React.FC = () => {
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold">감사 로그</h3>
           <div className="flex space-x-2">
-            <Button variant="secondary" size="sm" onClick={loadAuditLogs}>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => {
+                loadAuditLogs();
+                setMessage({ type: 'success', text: '감사 로그가 새로고침되었습니다.' });
+              }}
+            >
               🔄 새로고침
             </Button>
             <Button variant="secondary" size="sm" onClick={handleExportAuditLogs}>
-              📥 내보내기
+              📥 CSV 내보내기
+            </Button>
+            <Button 
+              variant="secondary" 
+              size="sm"
+              onClick={() => {
+                const summary = `📊 감사 로그 요약 (${auditLogs.length}건)\n\n• 평가 활동: ${auditLogs.filter(log => log.category === 'evaluation').length}건\n• 시스템 활동: ${auditLogs.filter(log => log.category === 'system').length}건\n• 사용자 활동: ${auditLogs.filter(log => log.category === 'user').length}건\n• 내비게이션: ${auditLogs.filter(log => log.category === 'navigation').length}건\n• 프로젝트 관련: ${auditLogs.filter(log => log.category === 'project').length}건\n• 인증 관련: ${auditLogs.filter(log => log.category === 'auth').length}건\n\n성공: ${auditLogs.filter(log => log.status === 'success').length}건\n경고: ${auditLogs.filter(log => log.status === 'warning').length}건\n오류: ${auditLogs.filter(log => log.status === 'error').length}건`;
+                alert(summary);
+              }}
+            >
+              📈 요약 보기
             </Button>
           </div>
         </div>
@@ -1939,24 +1926,357 @@ const SuperAdminDashboard: React.FC = () => {
     </div>
   );
 
-  // 각 탭별로 완전한 페이지를 렌더링
-  if (activeTab !== 'dashboard') {
-    // 개별 메뉴 페이지들은 전체 화면을 사용
-    return (
-      <div className="min-h-screen">
-        {activeTab === 'users' && renderUsers()}
-        {activeTab === 'projects' && renderProjects()}
-        {activeTab === 'monitoring' && renderMonitoring()}
-        {activeTab === 'database' && renderDatabase()}
-        {activeTab === 'audit' && renderAudit()}
-        {activeTab === 'settings' && renderSettings()}
-        {activeTab === 'backup' && renderBackup()}
-        {activeTab === 'system' && renderSystem()}
+  // 풀페이지 버전의 렌더링 함수들
+  const renderUsersFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Fixed Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                  title="대시보드로 돌아가기"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">👥</span>
+                    사용자 관리
+                  </h1>
+                  <p className="text-gray-600 mt-2">시스템 사용자 계정 및 권한을 관리합니다</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => {
+                    const stats = {
+                      총사용자: users.length,
+                      관리자: users.filter(u => u.role === 'admin').length,
+                      평가자: users.filter(u => u.role === 'evaluator').length,
+                      활성사용자: users.filter(u => u.status === 'active').length,
+                      비활성사용자: users.filter(u => u.status === 'inactive').length
+                    };
+                    alert(`📊 사용자 통계\n\n${Object.entries(stats).map(([key, value]) => `${key}: ${value}명`).join('\n')}`);
+                  }}
+                >
+                  📊 사용자 리포트
+                </Button>
+                <Button variant="primary" onClick={handleCreateUser}>
+                  ➕ 새 사용자 추가
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Status Message */}
+          {message && (
+            <div className={`p-4 rounded-lg border shadow-sm ${
+              message.type === 'success' 
+                ? 'bg-green-50 border-green-200 text-green-800' 
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-lg mr-2">
+                    {message.type === 'success' ? '✅' : '❌'}
+                  </span>
+                  <span className="font-medium">{message.text}</span>
+                </div>
+                <button 
+                  onClick={() => setMessage(null)}
+                  className="text-sm underline hover:no-underline"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Statistics Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card title="👥 전체 사용자">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">{users.length}</div>
+                <div className="text-sm text-gray-500 mt-1">총 등록 사용자</div>
+              </div>
+            </Card>
+            <Card title="👨‍💼 관리자">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600">
+                  {users.filter(u => u.role === 'admin').length}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">시스템 관리자</div>
+              </div>
+            </Card>
+            <Card title="👨‍💻 평가자">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">
+                  {users.filter(u => u.role === 'evaluator').length}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">평가 참여자</div>
+              </div>
+            </Card>
+            <Card title="✅ 활성 사용자">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-orange-600">
+                  {users.filter(u => u.status === 'active').length}
+                </div>
+                <div className="text-sm text-gray-500 mt-1">현재 활성화</div>
+              </div>
+            </Card>
+          </div>
+
+          {/* 기존 사용자 관리 콘텐츠 */}
+          {renderUsers()}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderProjectsFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">📋</span>
+                    프로젝트 관리
+                  </h1>
+                  <p className="text-gray-600 mt-2">모든 AHP 프로젝트를 통합 관리하고 모니터링합니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderProjects()}
+      </div>
+    </div>
+  );
+
+  const renderMonitoringFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">⚡</span>
+                    시스템 모니터링
+                  </h1>
+                  <p className="text-gray-600 mt-2">실시간 시스템 성능 및 상태를 모니터링합니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderMonitoring()}
+      </div>
+    </div>
+  );
+
+  const renderAuditFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">📝</span>
+                    감사 로그
+                  </h1>
+                  <p className="text-gray-600 mt-2">시스템 활동 내역 및 보안 감사를 모니터링합니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderAudit()}
+      </div>
+    </div>
+  );
+
+  const renderSettingsFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">⚙️</span>
+                    시스템 설정
+                  </h1>
+                  <p className="text-gray-600 mt-2">전역 설정 및 정책을 관리합니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderSettings()}
+      </div>
+    </div>
+  );
+
+  const renderBackupFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">💾</span>
+                    백업/복원
+                  </h1>
+                  <p className="text-gray-600 mt-2">데이터 백업 관리 및 복원 작업을 수행합니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderBackup()}
+      </div>
+    </div>
+  );
+
+  const renderDatabaseFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">🗄️</span>
+                    데이터베이스 관리
+                  </h1>
+                  <p className="text-gray-600 mt-2">데이터베이스 상태 관리 및 최적화를 수행합니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderDatabase()}
+      </div>
+    </div>
+  );
+
+  const renderSystemFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">🔧</span>
+                    시스템 관리
+                  </h1>
+                  <p className="text-gray-600 mt-2">시스템 전반의 상태와 설정을 관리합니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderSystem()}
+      </div>
+    </div>
+  );
+
+  // 개별 메뉴 페이지들은 전체 화면을 사용
+  if (activeTab !== 'dashboard') {
+    return (
+      <>
+        {activeTab === 'users' && renderUsersFullPage()}
+        {activeTab === 'projects' && renderProjectsFullPage()}
+        {activeTab === 'monitoring' && renderMonitoringFullPage()}
+        {activeTab === 'database' && renderDatabaseFullPage()}
+        {activeTab === 'audit' && renderAuditFullPage()}
+        {activeTab === 'settings' && renderSettingsFullPage()}
+        {activeTab === 'backup' && renderBackupFullPage()}
+        {activeTab === 'system' && renderSystemFullPage()}
+      </>
     );
   }
 
-  // 대시보드는 메뉴 선택 화면을 포함
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -1968,11 +2288,7 @@ const SuperAdminDashboard: React.FC = () => {
           <div className="text-sm text-gray-600">
             마지막 업데이트: {new Date().toLocaleString()}
           </div>
-          <Button variant="secondary" size="sm" onClick={() => {
-            loadSystemData();
-            loadSystemMetrics();
-            setMessage({ type: 'success', text: '데이터가 새로고침되었습니다.' });
-          }}>
+          <Button variant="secondary" size="sm">
             새로고침
           </Button>
         </div>
@@ -2031,7 +2347,7 @@ const SuperAdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Dashboard Content */}
+      {/* Main Content */}
       <div className="bg-white rounded-lg border border-gray-200">
         <div className="p-6">
           {renderDashboard()}
