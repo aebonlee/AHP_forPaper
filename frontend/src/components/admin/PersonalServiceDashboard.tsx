@@ -22,12 +22,15 @@ interface UserProject {
   id: string;
   title: string;
   description: string;
+  objective: string;
   status: 'draft' | 'active' | 'completed';
   created_at: string;
   evaluator_count: number;
   completion_rate: number;
   criteria_count: number;
   alternatives_count: number;
+  last_modified: string;
+  evaluation_method: 'pairwise' | 'direct' | 'mixed';
 }
 
 const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ 
@@ -39,6 +42,14 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeProject, setActiveProject] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<'overview' | 'projects' | 'criteria' | 'alternatives' | 'evaluators' | 'finalize'>('overview');
+  const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<UserProject | null>(null);
+  const [projectForm, setProjectForm] = useState({
+    title: '',
+    description: '',
+    objective: '',
+    evaluation_method: 'pairwise' as 'pairwise' | 'direct' | 'mixed'
+  });
   const [activeMenu, setActiveMenu] = useState<'dashboard' | 'projects' | 'creation' | 'model-builder' | 'evaluators' | 'monitoring' | 'analysis' | 'export' | 'settings'>(
     externalActiveTab === 'personal-service' ? 'dashboard' :
     externalActiveTab === 'my-projects' ? 'projects' :
@@ -52,6 +63,20 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
     'dashboard'
   );
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [newProjectForm, setNewProjectForm] = useState({
+    title: '',
+    description: '',
+    objective: '',
+    evaluation_method: 'pairwise' as 'pairwise' | 'direct' | 'mixed',
+    template: 'blank' as 'blank' | 'business' | 'technical' | 'academic'
+  });
+
+  const projectTemplates = {
+    blank: { name: '빈 프로젝트', desc: '처음부터 설정' },
+    business: { name: '비즈니스 결정', desc: '경영 의사결정 템플릿' },
+    technical: { name: '기술 선택', desc: '기술 대안 비교 템플맿' },
+    academic: { name: '연구 분석', desc: '학술 연구용 템플맿' }
+  };
 
   // 외부에서 activeTab이 변경되면 내부 activeMenu도 업데이트
   useEffect(() => {
@@ -79,31 +104,149 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
         id: '1',
         title: 'AI 개발 활용 방안 중요도 분석',
         description: '소프트웨어 개발자의 AI 활용 방안에 대한 중요도 분석',
+        objective: '개발 생산성 향상을 위한 AI 도구들의 우선순위 결정',
         status: 'active',
         created_at: '2024-02-01',
         evaluator_count: 26,
         completion_rate: 85,
         criteria_count: 3,
-        alternatives_count: 9
+        alternatives_count: 9,
+        last_modified: '2024-02-15',
+        evaluation_method: 'pairwise'
+      },
+      {
+        id: '2',
+        title: '프로젝트 관리 도구 선택',
+        description: '팀 협업을 위한 최적의 프로젝트 관리 도구 선정',
+        objective: '팀 규모와 업무 특성에 맞는 프로젝트 관리 도구 결정',
+        status: 'draft',
+        created_at: '2024-02-10',
+        evaluator_count: 0,
+        completion_rate: 0,
+        criteria_count: 0,
+        alternatives_count: 0,
+        last_modified: '2024-02-10',
+        evaluation_method: 'mixed'
       }
     ]);
   }, []);
 
+  const resetProjectForm = () => {
+    setProjectForm({
+      title: '',
+      description: '',
+      objective: '',
+      evaluation_method: 'pairwise'
+    });
+    setEditingProject(null);
+    setIsProjectFormOpen(false);
+  };
+
   const handleCreateProject = () => {
+    setIsProjectFormOpen(true);
+    setEditingProject(null);
+    resetProjectForm();
+  };
+
+  const handleEditProject = (project: UserProject) => {
+    setEditingProject(project);
+    setProjectForm({
+      title: project.title,
+      description: project.description,
+      objective: project.objective,
+      evaluation_method: project.evaluation_method
+    });
+    setIsProjectFormOpen(true);
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    if (window.confirm('정말로 이 프로젝트를 삭제하시겠습니까?')) {
+      setProjects(projects.filter(p => p.id !== projectId));
+    }
+  };
+
+  const handleSaveProject = () => {
+    if (!projectForm.title.trim()) {
+      alert('프로젝트명을 입력해주세요.');
+      return;
+    }
+
+    if (editingProject) {
+      // 편집 모드
+      const updatedProject: UserProject = {
+        ...editingProject,
+        title: projectForm.title,
+        description: projectForm.description,
+        objective: projectForm.objective,
+        evaluation_method: projectForm.evaluation_method,
+        last_modified: new Date().toISOString().split('T')[0]
+      };
+      setProjects(projects.map(p => p.id === editingProject.id ? updatedProject : p));
+    } else {
+      // 생성 모드
+      const newProject: UserProject = {
+        id: Date.now().toString(),
+        title: projectForm.title,
+        description: projectForm.description,
+        objective: projectForm.objective,
+        status: 'draft',
+        created_at: new Date().toISOString().split('T')[0],
+        last_modified: new Date().toISOString().split('T')[0],
+        evaluator_count: 0,
+        completion_rate: 0,
+        criteria_count: 0,
+        alternatives_count: 0,
+        evaluation_method: projectForm.evaluation_method
+      };
+      setProjects([...projects, newProject]);
+      setSelectedProjectId(newProject.id);
+    }
+    resetProjectForm();
+  };
+
+  const handleCreateNewProject = () => {
+    if (!newProjectForm.title.trim()) {
+      alert('프로젝트명을 입력해주세요.');
+      return;
+    }
+
     const newProject: UserProject = {
       id: Date.now().toString(),
-      title: '새 프로젝트',
-      description: '새로 생성된 AHP 프로젝트',
+      title: newProjectForm.title,
+      description: newProjectForm.description,
+      objective: newProjectForm.objective,
       status: 'draft',
       created_at: new Date().toISOString().split('T')[0],
+      last_modified: new Date().toISOString().split('T')[0],
       evaluator_count: 0,
       completion_rate: 0,
       criteria_count: 0,
-      alternatives_count: 0
+      alternatives_count: 0,
+      evaluation_method: newProjectForm.evaluation_method
     };
+
     setProjects([...projects, newProject]);
     setSelectedProjectId(newProject.id);
-    setCurrentStep('projects');
+    
+    // 템플맿에 따라 기본 데이터 설정
+    if (newProjectForm.template !== 'blank') {
+      // 모델 구축 페이지로 이동
+      setCurrentStep('criteria');
+      handleTabChange('model-builder');
+    } else {
+      handleTabChange('projects');
+    }
+
+    // 폼 초기화
+    setNewProjectForm({
+      title: '',
+      description: '',
+      objective: '',
+      evaluation_method: 'pairwise',
+      template: 'blank'
+    });
+
+    alert('프로젝트가 성공적으로 생성되었습니다!');
   };
 
   const renderOverview = () => (
@@ -390,17 +533,86 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
   const renderMyProjects = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">내 프로젝트</h3>
-        <Button variant="primary" onClick={() => setActiveMenu('creation')}>
+        <h3 className="text-lg font-semibold">내 프로젝트 ({projects.length}개)</h3>
+        <Button variant="primary" onClick={handleCreateProject}>
           ➕ 새 프로젝트 생성
         </Button>
       </div>
+
+      {/* 프로젝트 생성/편집 모달 */}
+      {isProjectFormOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              {editingProject ? '프로젝트 편집' : '새 프로젝트 생성'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트명</label>
+                <input 
+                  type="text" 
+                  value={projectForm.title}
+                  onChange={(e) => setProjectForm({...projectForm, title: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2" 
+                  placeholder="예: AI 도구 선택을 위한 중요도 분석" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                <textarea 
+                  value={projectForm.description}
+                  onChange={(e) => setProjectForm({...projectForm, description: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2 h-20" 
+                  placeholder="프로젝트의 목적과 배경을 설명해주세요"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">분석 목표</label>
+                <textarea 
+                  value={projectForm.objective}
+                  onChange={(e) => setProjectForm({...projectForm, objective: e.target.value})}
+                  className="w-full border border-gray-300 rounded px-3 py-2 h-16" 
+                  placeholder="이 분석을 통해 달성하고자 하는 목표"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">평가 방법</label>
+                <select 
+                  value={projectForm.evaluation_method}
+                  onChange={(e) => setProjectForm({...projectForm, evaluation_method: e.target.value as any})}
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                >
+                  <option value="pairwise">쌍대비교 (근상)</option>
+                  <option value="direct">직접입력</option>
+                  <option value="mixed">혼합 방식</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button variant="secondary" onClick={resetProjectForm}>
+                  취소
+                </Button>
+                <Button variant="primary" onClick={handleSaveProject}>
+                  {editingProject ? '수정' : '생성'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-6">
         {projects.map((project) => (
           <Card key={project.id} title={project.title}>
             <div className="space-y-4">
-              <p className="text-gray-600">{project.description}</p>
+              <div className="space-y-2">
+                <p className="text-gray-600">{project.description}</p>
+                <p className="text-sm text-gray-500">목표: {project.objective}</p>
+                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                  <span>생성: {project.created_at}</span>
+                  <span>수정: {project.last_modified}</span>
+                  <span>평가방식: {project.evaluation_method === 'pairwise' ? '쌍대비교' : project.evaluation_method === 'direct' ? '직접입력' : '혼합'}</span>
+                </div>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div className="text-center">
                   <div className="font-medium text-blue-600">{project.evaluator_count}명</div>
@@ -429,23 +641,44 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
                    project.status === 'completed' ? '완료' : '준비중'}
                 </span>
                 <div className="flex space-x-2">
+                  <Button variant="secondary" size="sm" onClick={() => handleEditProject(project)}>
+                    ✏️ 편집
+                  </Button>
                   <Button variant="secondary" size="sm" onClick={() => {
                     setSelectedProjectId(project.id);
                     setActiveMenu('model-builder');
                   }}>
-                    모델 편집
+                    🏠️ 모델 구성
                   </Button>
                   <Button variant="secondary" size="sm" onClick={() => {
                     setSelectedProjectId(project.id);
                     setActiveMenu('analysis');
                   }}>
-                    결과 분석
+                    📊 결과 분석
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    onClick={() => handleDeleteProject(project.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    🗑️ 삭제
                   </Button>
                 </div>
               </div>
             </div>
           </Card>
         ))}
+        {projects.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-6xl mb-4">📊</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">프로젝트가 없습니다</h3>
+            <p className="text-gray-600 mb-4">첫 번째 AHP 분석 프로젝트를 생성해보세요.</p>
+            <Button variant="primary" onClick={handleCreateProject}>
+              새 프로젝트 생성
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -490,7 +723,32 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">새 프로젝트 생성</h3>
       
-      <Card title="프로젝트 생성 마법사">
+      {/* 템플맿 선택 */}
+      <Card title="프로젝트 템플맿 선택">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Object.entries(projectTemplates).map(([key, template]) => (
+            <button
+              key={key}
+              onClick={() => setNewProjectForm({...newProjectForm, template: key as any})}
+              className={`p-4 text-center border-2 rounded-lg transition-all ${
+                newProjectForm.template === key
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+              }`}
+            >
+              <div className="text-2xl mb-2">
+                {key === 'blank' ? '📄' : 
+                 key === 'business' ? '📋' :
+                 key === 'technical' ? '💻' : '📚'}
+              </div>
+              <h4 className="font-medium text-gray-900 mb-1">{template.name}</h4>
+              <p className="text-xs text-gray-600">{template.desc}</p>
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Card title="프로젝트 상세 정보">
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 border-2 border-blue-200 bg-blue-50 rounded-lg">
@@ -513,11 +771,31 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
           <form className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트명</label>
-              <input type="text" className="w-full border border-gray-300 rounded px-3 py-2" placeholder="예: AI 도구 선택을 위한 중요도 분석" />
+              <input 
+                type="text" 
+                value={newProjectForm.title}
+                onChange={(e) => setNewProjectForm({...newProjectForm, title: e.target.value})}
+                className="w-full border border-gray-300 rounded px-3 py-2" 
+                placeholder="예: AI 도구 선택을 위한 중요도 분석" 
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
-              <textarea className="w-full border border-gray-300 rounded px-3 py-2 h-20" placeholder="프로젝트의 목적과 배경을 설명해주세요"></textarea>
+              <textarea 
+                value={newProjectForm.description}
+                onChange={(e) => setNewProjectForm({...newProjectForm, description: e.target.value})}
+                className="w-full border border-gray-300 rounded px-3 py-2 h-20" 
+                placeholder="프로젝트의 목적과 배경을 설명해주세요"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">분석 목표</label>
+              <textarea 
+                value={newProjectForm.objective}
+                onChange={(e) => setNewProjectForm({...newProjectForm, objective: e.target.value})}
+                className="w-full border border-gray-300 rounded px-3 py-2 h-16" 
+                placeholder="이 분석을 통해 달성하고자 하는 구체적인 목표"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">평가 방법</label>
@@ -531,7 +809,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
               <Button variant="secondary" onClick={() => setActiveMenu('projects')}>
                 취소
               </Button>
-              <Button variant="primary">
+              <Button variant="primary" onClick={handleCreateNewProject}>
                 프로젝트 생성
               </Button>
             </div>
