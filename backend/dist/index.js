@@ -79,6 +79,18 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+// Manual migration endpoint for production debugging
+app.post('/api/admin/migrate', async (req, res) => {
+    try {
+        console.log('🔧 Manual migration requested...');
+        await (0, migrate_1.runMigrations)();
+        res.json({ success: true, message: 'Database migrations completed successfully' });
+    }
+    catch (error) {
+        console.error('❌ Manual migration failed:', error);
+        res.status(500).json({ success: false, error: error instanceof Error ? error.message : String(error) });
+    }
+});
 app.use('/api/auth', auth_1.default);
 app.use('/api/users', users_1.default);
 app.use('/api/projects', projects_1.default);
