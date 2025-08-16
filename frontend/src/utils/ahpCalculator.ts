@@ -96,9 +96,10 @@ export function calculateEigenVector(matrix: number[][]): number[] {
 export function calculateEigenVectorPowerMethod(matrix: number[][], tolerance: number = 1e-10, maxIterations: number = 1000): number[] {
   const n = matrix.length;
   let vector = new Array(n).fill(1 / n); // Initial uniform vector
-  let prevVector = [...vector];
   
   for (let iter = 0; iter < maxIterations; iter++) {
+    const prevVector = [...vector];
+    
     // Matrix multiplication: matrix * vector
     const newVector = new Array(n).fill(0);
     for (let i = 0; i < n; i++) {
@@ -116,8 +117,6 @@ export function calculateEigenVectorPowerMethod(matrix: number[][], tolerance: n
     if (diff < tolerance) {
       break;
     }
-    
-    prevVector = [...vector];
   }
   
   return vector;

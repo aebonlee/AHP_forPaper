@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Card from '../common/Card';
-import { calculateGroupAHP, calculateHierarchicalAHP, GroupAHPInput, HierarchicalAHPInput } from '../../utils/ahpCalculator';
 
 interface AnalysisResult {
   alternativeId: string;
@@ -42,9 +41,7 @@ const AdvancedResultsAnalysis: React.FC<AdvancedResultsAnalysisProps> = ({
 }) => {
   const [analysisType, setAnalysisType] = useState<'individual' | 'group' | 'sensitivity'>('individual');
   const [groupResults, setGroupResults] = useState<GroupAnalysisResult | null>(null);
-  const [sensitivityResults, setSensitivityResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedCriteria, setSelectedCriteria] = useState<string>('all');
 
   // 샘플 데이터 (실제로는 API에서 가져옴)
   const sampleData = useMemo(() => ({

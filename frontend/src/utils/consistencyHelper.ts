@@ -216,17 +216,8 @@ function generateSuggestions(
 function estimateImprovement(matrix: number[][], topPairs: InconsistentPair[]): number {
   if (topPairs.length === 0) return calculateMatrixCR(matrix);
 
-  // Create a copy of the matrix with suggested changes
-  const improvedMatrix = matrix.map(row => [...row]);
-  
-  // Apply suggestions for top pairs
-  topPairs.forEach(pair => {
-    // Find indices (simplified - assumes element names match order)
-    // In practice, you'd need proper mapping
-    const improvement = pair.suggestedValue;
-    // Apply changes... (implementation depends on how elements are mapped)
-  });
-
+  // Rough estimation of improvement potential
+  // In a real implementation, this would apply the suggested changes and recalculate CR
   return calculateMatrixCR(matrix) * 0.7; // Rough estimation of 30% improvement
 }
 

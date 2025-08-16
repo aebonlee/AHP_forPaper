@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Card from '../common/Card';
 import { subscriptionService } from '../../services/subscriptionService';
 import { SubscriptionPlan, UserSubscription, SubscriptionUsage, ExtendedUser } from '../../types/subscription';
@@ -20,11 +20,7 @@ const SubscriptionDashboard: React.FC<SubscriptionDashboardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'plans' | 'admins' | 'billing'>('overview');
 
-  useEffect(() => {
-    loadSubscriptionData();
-  }, [user.id]);
-
-  const loadSubscriptionData = async () => {
+  const loadSubscriptionData = useCallback(async () => {
     try {
       setLoading(true);
       const [subData, usageData, plansData] = await Promise.all([
@@ -47,7 +43,11 @@ const SubscriptionDashboard: React.FC<SubscriptionDashboardProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id, user.role]);
+
+  useEffect(() => {
+    loadSubscriptionData();
+  }, [loadSubscriptionData]);
 
   const handleSubscribe = async (planId: string) => {
     try {

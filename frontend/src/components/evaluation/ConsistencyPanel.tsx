@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { analyzeConsistency, getRealtimeConsistencyFeedback, ConsistencyAnalysis } from '../../utils/consistencyHelper';
-import { getConsistencyLevel, getConsistencyColor } from '../../utils/ahpCalculator';
+import { getConsistencyLevel } from '../../utils/ahpCalculator';
 
 interface ConsistencyPanelProps {
   matrix: number[][];

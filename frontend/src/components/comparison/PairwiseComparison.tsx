@@ -5,7 +5,7 @@ import ConsistencyPanel from '../evaluation/ConsistencyPanel';
 // import { DEMO_COMPARISONS } from '../../data/demoData'; // 현재 미사용
 import { MESSAGES } from '../../constants/messages';
 import { SCREEN_IDS } from '../../constants/screenIds';
-import { buildComparisonMatrix, calculateAHPEnhanced } from '../../utils/ahpCalculator';
+import { buildComparisonMatrix } from '../../utils/ahpCalculator';
 
 interface Criterion {
   id: string;
@@ -78,7 +78,6 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
   const [saving, setSaving] = useState(false);
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
   const [recentChange, setRecentChange] = useState<{ i: number; j: number; oldValue: number; newValue: number } | undefined>();
-  const [showConsistencyHelper, setShowConsistencyHelper] = useState(true);
 
   const API_BASE_URL = process.env.NODE_ENV === 'development' 
     ? 'http://localhost:5000' 
@@ -505,7 +504,7 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
           )}
           
           {/* Smart Consistency Helper */}
-          {showConsistencyHelper && comparisonMatrix.length > 0 && (
+          {comparisonMatrix.length > 0 && (
             <ConsistencyPanel
               matrix={comparisonMatrix}
               elementNames={elements?.map(e => e.name) || []}
