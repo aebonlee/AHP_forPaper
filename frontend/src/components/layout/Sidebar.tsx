@@ -3,12 +3,23 @@ import React from 'react';
 interface SidebarProps {
   isCollapsed: boolean;
   userRole: 'admin' | 'evaluator' | null;
+  adminType?: 'super' | 'personal';
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, activeTab, onTabChange }) => {
-  const adminMenuItems = [
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, adminType, activeTab, onTabChange }) => {
+  const superAdminMenuItems = [
+    { id: 'super-admin', label: '대시보드', icon: '📊' },
+    { id: 'admin-type-selection', label: '모드 전환', icon: '🔄' }
+  ];
+
+  const personalServiceMenuItems = [
+    { id: 'personal-service', label: '개인 서비스', icon: '👤' },
+    { id: 'admin-type-selection', label: '모드 전환', icon: '🔄' }
+  ];
+
+  const legacyAdminMenuItems = [
     { id: 'landing', label: '시작하기', icon: '🏠' },
     { id: 'projects', label: '프로젝트', icon: '📋' },
     { id: 'project-creation', label: '프로젝트 생성', icon: '➕' },
@@ -27,7 +38,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, activeTab, onT
     { id: 'progress', label: '진행 현황', icon: '📈' }
   ];
 
-  const menuItems = userRole === 'admin' ? adminMenuItems : evaluatorMenuItems;
+  const getMenuItems = () => {
+    if (userRole === 'admin') {
+      if (adminType === 'super') {
+        return superAdminMenuItems;
+      } else if (adminType === 'personal') {
+        return personalServiceMenuItems;
+      } else {
+        // 관리자 유형이 선택되지 않은 경우 모드 선택만 표시
+        return [{ id: 'admin-type-selection', label: '모드 선택', icon: '🔄' }];
+      }
+    }
+    return evaluatorMenuItems;
+  };
+
+  const menuItems = getMenuItems();
 
   return (
     <div className={`bg-gray-800 text-white transition-all duration-300 ${
@@ -36,7 +61,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, activeTab, onT
       <div className="p-4">
         {!isCollapsed && (
           <h2 className="text-lg font-semibold mb-6 text-gray-100">
-            {userRole === 'admin' ? 'Administration' : 'Evaluation'}
+            {userRole === 'admin' 
+              ? (adminType === 'super' ? '총괄 관리자' : adminType === 'personal' ? '개인 서비스' : '관리자')
+              : '평가자'
+            }
           </h2>
         )}
         

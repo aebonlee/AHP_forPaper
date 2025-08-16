@@ -5,9 +5,12 @@ import Sidebar from './Sidebar';
 interface LayoutProps {
   children: React.ReactNode;
   user?: {
+    id: string;
     first_name: string;
     last_name: string;
+    email: string;
     role: 'admin' | 'evaluator';
+    admin_type?: 'super' | 'personal';
   } | null;
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -33,6 +36,7 @@ const Layout: React.FC<LayoutProps> = ({
             <Sidebar
               isCollapsed={sidebarCollapsed}
               userRole={user.role}
+              adminType={user.admin_type}
               activeTab={activeTab}
               onTabChange={onTabChange}
             />

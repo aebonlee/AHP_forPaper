@@ -6,6 +6,8 @@ import ModelBuilder from './components/model/ModelBuilder';
 import PairwiseComparison from './components/comparison/PairwiseComparison';
 import ResultsDashboard from './components/results/ResultsDashboard';
 import LandingPage from './components/admin/LandingPage';
+import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
+import PersonalServiceDashboard from './components/admin/PersonalServiceDashboard';
 import ProjectCreation from './components/admin/ProjectCreation';
 import ModelBuilding from './components/admin/ModelBuilding';
 import EvaluationResults from './components/admin/EvaluationResults';
@@ -26,9 +28,12 @@ import {
 
 function App() {
   const [user, setUser] = useState<{
+    id: string;
     first_name: string;
     last_name: string;
+    email: string;
     role: 'admin' | 'evaluator';
+    admin_type?: 'super' | 'personal'; // 관리자 유형 구분
   } | null>(null);
   const [activeTab, setActiveTab] = useState('landing');
   const [loginLoading, setLoginLoading] = useState(false);
@@ -55,10 +60,16 @@ function App() {
     console.log('📋 로딩될 샘플 프로젝트:', DEMO_PROJECTS);
     setBackendStatus('unavailable');
     setIsDemoMode(true);
-    setUser(DEMO_USER);
+    // 데모 사용자에 admin_type 추가
+    setUser({
+      ...DEMO_USER,
+      id: '1',
+      email: 'admin@ahp-system.com',
+      admin_type: 'personal' // 기본적으로 개인 서비스로 설정
+    });
     setProjects(DEMO_PROJECTS);
     setSelectedProjectId(DEMO_PROJECTS[0].id);
-    setActiveTab('landing');
+    setActiveTab('admin-type-selection');
     console.log('✅ 데모 데이터 설정 완료 - 프로젝트 수:', DEMO_PROJECTS.length);
   };
 
@@ -178,12 +189,28 @@ function App() {
   useEffect(() => {
     if (user) {
       if (user.role === 'admin') {
-        setActiveTab('landing');
+        setActiveTab('admin-type-selection');
       } else if (user.role === 'evaluator') {
         setActiveTab('evaluator-dashboard');
       }
     }
   }, [user]);
+
+  // 관리자 유형 선택 핸들러
+  const handleAdminTypeSelect = (adminType: 'super' | 'personal') => {
+    if (user) {
+      setUser({
+        ...user,
+        admin_type: adminType
+      });
+      
+      if (adminType === 'super') {
+        setActiveTab('super-admin');
+      } else {
+        setActiveTab('personal-service');
+      }
+    }
+  };
 
   const fetchProjects = useCallback(async () => {
     if (isDemoMode) {
@@ -567,12 +594,112 @@ function App() {
     </div>
   );
 
+  const renderAdminTypeSelection = () => (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold text-gray-900">
+          관리자 모드 선택
+        </h1>
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          사용하실 관리자 모드를 선택해주세요. 언제든지 모드를 변경할 수 있습니다.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* 총괄 관리자 모드 */}
+        <div 
+          onClick={() => handleAdminTypeSelect('super')}
+          className="bg-white border-2 border-gray-200 rounded-xl p-8 hover:border-blue-500 hover:shadow-lg transition-all cursor-pointer group"
+        >
+          <div className="text-center space-y-4">
+            <div className="text-6xl group-hover:scale-110 transition-transform">🏢</div>
+            <h3 className="text-2xl font-bold text-gray-900">총괄 관리자</h3>
+            <p className="text-gray-600">
+              시스템 전체를 관리하고 모든 사용자와 프로젝트를 통합 관리합니다.
+            </p>
+            <div className="space-y-2 text-sm text-gray-500">
+              <div className="flex items-center justify-center space-x-2">
+                <span>✓</span>
+                <span>전체 사용자 관리</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span>✓</span>
+                <span>모든 프로젝트 모니터링</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span>✓</span>
+                <span>시스템 설정 및 성능 관리</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span>✓</span>
+                <span>통계 및 보고서</span>
+              </div>
+            </div>
+            <button className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+              총괄 관리자로 시작
+            </button>
+          </div>
+        </div>
+
+        {/* 개인 서비스 모드 */}
+        <div 
+          onClick={() => handleAdminTypeSelect('personal')}
+          className="bg-white border-2 border-gray-200 rounded-xl p-8 hover:border-green-500 hover:shadow-lg transition-all cursor-pointer group"
+        >
+          <div className="text-center space-y-4">
+            <div className="text-6xl group-hover:scale-110 transition-transform">👤</div>
+            <h3 className="text-2xl font-bold text-gray-900">개인 서비스</h3>
+            <p className="text-gray-600">
+              개인 프로젝트를 생성하고 관리하여 맞춤형 AHP 분석을 수행합니다.
+            </p>
+            <div className="space-y-2 text-sm text-gray-500">
+              <div className="flex items-center justify-center space-x-2">
+                <span>✓</span>
+                <span>개인 프로젝트 생성</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span>✓</span>
+                <span>평가자 초대 및 관리</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span>✓</span>
+                <span>AHP 모델 구축</span>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span>✓</span>
+                <span>결과 분석 및 내보내기</span>
+              </div>
+            </div>
+            <button className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 transition-colors">
+              개인 서비스로 시작
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center">
+        <p className="text-sm text-gray-500">
+          모드는 언제든지 변경할 수 있습니다. 상단 메뉴에서 '모드 전환'을 선택하세요.
+        </p>
+      </div>
+    </div>
+  );
+
   const renderContent = () => {
     if (!user) {
       return null;
     }
 
     switch (activeTab) {
+      case 'admin-type-selection':
+        return renderAdminTypeSelection();
+
+      case 'super-admin':
+        return <SuperAdminDashboard />;
+
+      case 'personal-service':
+        return <PersonalServiceDashboard user={user} />;
+
       case 'landing':
         return (
           <LandingPage 
