@@ -502,6 +502,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderUsers = () => (
     <div className="space-y-6">
       {message && (
@@ -733,6 +734,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     </div>
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderProjects = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -813,6 +815,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     </div>
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderSystem = () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">시스템 설정</h3>
@@ -887,6 +890,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     </div>
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderMonitoring = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -1104,6 +1108,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     </div>
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderDatabase = () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">데이터베이스 관리</h3>
@@ -1175,6 +1180,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     </div>
   );
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderAudit = () => {
     const filteredLogs = getFilteredAuditLogs();
     
@@ -1389,6 +1395,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderSettings = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -1741,6 +1748,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const renderBackup = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
