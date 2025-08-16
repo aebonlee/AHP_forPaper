@@ -5,6 +5,10 @@ import CriteriaManagement from './CriteriaManagement';
 import AlternativeManagement from './AlternativeManagement';
 import EvaluatorAssignment from './EvaluatorAssignment';
 import ModelFinalization from './ModelFinalization';
+import SubscriptionDashboard from '../subscription/SubscriptionDashboard';
+import AdvancedResultsAnalysis from '../analysis/AdvancedResultsAnalysis';
+import InteractiveCharts from '../visualization/InteractiveCharts';
+import { ExtendedUser } from '../../types/subscription';
 
 interface PersonalServiceProps {
   user: {
@@ -211,6 +215,12 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExportResults = (format: string, data?: any) => {
+    // 결과 내보내기 로직
+    console.log(`Exporting results to ${format}`, data);
+    alert(`${format.toUpperCase()} 형식으로 결과를 내보내는 기능을 개발 중입니다.`);
   };
 
   const handleCreateNewProject = async () => {
@@ -1076,17 +1086,17 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 flex items-center">
                     <span className="text-4xl mr-3">📊</span>
-                    결과 분석
+                    고급 결과 분석
                   </h1>
-                  <p className="text-gray-600 mt-2">AHP 분석 결과와 일관성을 검토합니다</p>
+                  <p className="text-gray-600 mt-2">AHP 분석 결과를 확인하고 심화 인사이트를 도출합니다</p>
                 </div>
               </div>
               <div className="flex space-x-2">
-                <Button variant="secondary" onClick={() => handleTabChange('monitoring')}>
-                  📈 진행률 확인
+                <Button variant="secondary" onClick={() => handleExportResults('excel')}>
+                  📤 Excel 내보내기
                 </Button>
-                <Button variant="secondary" onClick={() => handleTabChange('export')}>
-                  📤 보고서 내보내기
+                <Button variant="secondary" onClick={() => handleExportResults('pdf')}>
+                  📄 PDF 보고서
                 </Button>
               </div>
             </div>
@@ -1094,7 +1104,57 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderResultsAnalysis()}
+        {selectedProjectId ? (
+          <div className="space-y-8">
+            {/* 고급 결과 분석 */}
+            <AdvancedResultsAnalysis 
+              projectId={selectedProjectId}
+              onExport={handleExportResults}
+            />
+            
+            {/* 인터랙티브 차트 */}
+            <InteractiveCharts 
+              data={{
+                labels: ['Claude Code', 'GitHub Copilot', 'Cursor AI', 'Tabnine'],
+                datasets: [{
+                  label: 'AHP 점수',
+                  data: [0.387, 0.285, 0.198, 0.130],
+                  backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444']
+                }]
+              }}
+              title="대안별 종합 점수 비교"
+            />
+          </div>
+        ) : (
+          <Card title="프로젝트를 선택하세요">
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">📊</div>
+              <p className="text-gray-600 mb-4">분석할 프로젝트를 선택해주세요.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                {projects.filter(p => p.status === 'active' || p.status === 'completed').map(project => (
+                  <button
+                    key={project.id}
+                    onClick={() => setSelectedProjectId(project.id)}
+                    className="p-4 border rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+                  >
+                    <h4 className="font-medium">{project.title}</h4>
+                    <p className="text-sm text-gray-600 mt-1">{project.description}</p>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        project.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {project.status === 'active' ? '진행중' : '완료'}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        완료율: {project.completion_rate}%
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
@@ -1392,9 +1452,9 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 flex items-center">
                     <span className="text-4xl mr-3">⚙️</span>
-                    개인 설정
+                    개인 설정 및 구독 관리
                   </h1>
-                  <p className="text-gray-600 mt-2">계정 정보와 환경 설정을 관리합니다</p>
+                  <p className="text-gray-600 mt-2">계정 정보, 구독 플랜, 개인 환경설정을 관리합니다</p>
                 </div>
               </div>
             </div>
@@ -1402,7 +1462,14 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderPersonalSettings()}
+        <div className="space-y-8">
+          {/* 구독 관리 대시보드 */}
+          <SubscriptionDashboard 
+            user={user as ExtendedUser}
+          />
+          {/* 개인 설정 */}
+          {renderPersonalSettings()}
+        </div>
       </div>
     </div>
   );

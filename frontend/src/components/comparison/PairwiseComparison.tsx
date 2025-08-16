@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Card from '../common/Card';
 import ScreenID from '../common/ScreenID';
+import ConsistencyPanel from '../evaluation/ConsistencyPanel';
 // import { DEMO_COMPARISONS } from '../../data/demoData'; // 현재 미사용
 import { MESSAGES } from '../../constants/messages';
 import { SCREEN_IDS } from '../../constants/screenIds';
+import { buildComparisonMatrix, calculateAHPEnhanced } from '../../utils/ahpCalculator';
 
 interface Criterion {
   id: string;
@@ -75,6 +77,8 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [currentPairIndex, setCurrentPairIndex] = useState(0);
+  const [recentChange, setRecentChange] = useState<{ i: number; j: number; oldValue: number; newValue: number } | undefined>();
+  const [showConsistencyHelper, setShowConsistencyHelper] = useState(true);
 
   const API_BASE_URL = process.env.NODE_ENV === 'development' 
     ? 'http://localhost:5000' 
@@ -141,6 +145,23 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
 
     try {
       setSaving(true);
+      
+      // Track change for consistency feedback
+      const oldValue = getComparisonValue(element1, element2) || 1;
+      const element1Index = elements?.findIndex(e => e.id === element1.id) ?? -1;
+      const element2Index = elements?.findIndex(e => e.id === element2.id) ?? -1;
+      
+      if (element1Index >= 0 && element2Index >= 0) {
+        setRecentChange({
+          i: element1Index,
+          j: element2Index,
+          oldValue,
+          newValue: value
+        });
+        
+        // Clear recent change after 3 seconds
+        setTimeout(() => setRecentChange(undefined), 3000);
+      }
       
       const requestBody: any = {
         project_id: projectId,
@@ -255,6 +276,24 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
   };
 
   const consistencyRatio = calculateConsistencyRatio();
+  
+  // Build comparison matrix for consistency analysis
+  const comparisonMatrix = React.useMemo(() => {
+    if (!elements || elements.length < 2) return [];
+    
+    const comparisonsInput = Array.from(comparisons.values()).map(comp => ({
+      element1_id: elementType === 'criteria' ? comp.criterion1_id! : comp.alternative1_id!,
+      element2_id: elementType === 'criteria' ? comp.criterion2_id! : comp.alternative2_id!,
+      value: comp.value
+    }));
+    
+    return buildComparisonMatrix(elements, comparisonsInput);
+  }, [elements, comparisons, elementType]);
+
+  const handleSuggestionApply = (i: number, j: number, newValue: number) => {
+    if (!elements || !elements[i] || !elements[j]) return;
+    saveComparison(elements[i], elements[j], newValue);
+  };
 
   // 데모 모드에서는 간단한 인터페이스 표시
   if (demoMode) {
@@ -463,6 +502,17 @@ const PairwiseComparison: React.FC<PairwiseComparisonProps> = ({
                 </div>
               )}
             </div>
+          )}
+          
+          {/* Smart Consistency Helper */}
+          {showConsistencyHelper && comparisonMatrix.length > 0 && (
+            <ConsistencyPanel
+              matrix={comparisonMatrix}
+              elementNames={elements?.map(e => e.name) || []}
+              onSuggestionApply={handleSuggestionApply}
+              recentChange={recentChange}
+              className="mt-6"
+            />
           )}
         </div>
       </Card>
