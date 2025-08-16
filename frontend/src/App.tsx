@@ -232,7 +232,11 @@ function App() {
 
       if (response.ok) {
         const data = await response.json();
-        setProjects(data.projects || []);
+        // Filter out old sample projects on frontend as well
+        const filteredProjects = (data.projects || []).filter((project: any) => 
+          !['스마트폰 선택 평가', '직원 채용 평가', '투자 포트폴리오 선택'].includes(project.title)
+        );
+        setProjects(filteredProjects);
       }
     } catch (error) {
       console.error('Failed to fetch projects:', error);
