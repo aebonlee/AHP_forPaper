@@ -5,7 +5,7 @@ import Card from './components/common/Card';
 import PairwiseComparison from './components/comparison/PairwiseComparison';
 import ResultsDashboard from './components/results/ResultsDashboard';
 import LandingPage from './components/admin/LandingPage';
-import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
+import EnhancedSuperAdminDashboard from './components/admin/EnhancedSuperAdminDashboard';
 import PersonalServiceDashboard from './components/admin/PersonalServiceDashboard';
 import ModelBuilding from './components/admin/ModelBuilding';
 import EvaluationResults from './components/admin/EvaluationResults';
@@ -641,8 +641,18 @@ function App() {
       case 'backup':
       case 'system':
         return (
-          <SuperAdminDashboard 
-            activeTab={activeTab === 'super-admin' ? 'dashboard' : activeTab}
+          <EnhancedSuperAdminDashboard 
+            user={{
+              ...user,
+              role: 'super_admin' as const,
+              subscription: undefined,
+              parentAdminId: undefined,
+              createdBy: undefined,
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }}
+            activeTab={activeTab === 'super-admin' ? 'overview' : activeTab}
             onTabChange={setActiveTab}
           />
         );
