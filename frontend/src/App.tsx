@@ -716,23 +716,27 @@ function App() {
         );
 
       case 'personal-service':
-        return <PersonalServiceDashboard user={user} />;
+      case 'my-projects':
+      case 'project-creation':
+      case 'model-builder':
+      case 'evaluator-management':
+      case 'progress-monitoring':
+      case 'results-analysis':
+      case 'export-reports':
+      case 'personal-settings':
+        return (
+          <PersonalServiceDashboard 
+            user={user}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
 
       case 'landing':
         return (
           <LandingPage 
             user={user}
             onGetStarted={handleGetStarted}
-          />
-        );
-
-      case 'project-creation':
-        return (
-          <ProjectCreation
-            onProjectCreated={handleProjectCreated}
-            onCancel={() => setActiveTab('personal-projects')}
-            loading={projectCreationLoading}
-            createProject={createProject}
           />
         );
 
@@ -896,24 +900,6 @@ function App() {
             onRefresh={fetchUsers}
           />
         );
-        
-      case 'model-builder':
-        if (!selectedProjectId) {
-          return (
-            <Card title="모델 빌더">
-              <div className="text-center py-8">
-                <p className="text-gray-500">프로젝트를 선택해주세요.</p>
-                <button
-                  onClick={() => setActiveTab('personal-projects')}
-                  className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  프로젝트 목록으로 이동
-                </button>
-              </div>
-            </Card>
-          );
-        }
-        return <ModelBuilder projectId={selectedProjectId} demoMode={isDemoMode} />;
         
       case 'results':
         if (!selectedProjectId) {

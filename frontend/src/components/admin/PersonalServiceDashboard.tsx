@@ -14,6 +14,8 @@ interface PersonalServiceProps {
     email: string;
     role: 'admin' | 'evaluator';
   };
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 interface UserProject {
@@ -28,13 +30,47 @@ interface UserProject {
   alternatives_count: number;
 }
 
-const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
+const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ 
+  user, 
+  activeTab: externalActiveTab,
+  onTabChange: externalOnTabChange
+}) => {
   const [projects, setProjects] = useState<UserProject[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeProject, setActiveProject] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<'overview' | 'projects' | 'criteria' | 'alternatives' | 'evaluators' | 'finalize'>('overview');
-  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'projects' | 'creation' | 'model-builder' | 'evaluators' | 'monitoring' | 'analysis' | 'export' | 'settings'>('dashboard');
+  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'projects' | 'creation' | 'model-builder' | 'evaluators' | 'monitoring' | 'analysis' | 'export' | 'settings'>(
+    externalActiveTab === 'personal-service' ? 'dashboard' :
+    externalActiveTab === 'my-projects' ? 'projects' :
+    externalActiveTab === 'project-creation' ? 'creation' :
+    externalActiveTab === 'model-builder' ? 'model-builder' :
+    externalActiveTab === 'evaluator-management' ? 'evaluators' :
+    externalActiveTab === 'progress-monitoring' ? 'monitoring' :
+    externalActiveTab === 'results-analysis' ? 'analysis' :
+    externalActiveTab === 'export-reports' ? 'export' :
+    externalActiveTab === 'personal-settings' ? 'settings' :
+    'dashboard'
+  );
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+
+  // 외부에서 activeTab이 변경되면 내부 activeMenu도 업데이트
+  useEffect(() => {
+    if (externalActiveTab) {
+      const menuMap: Record<string, string> = {
+        'personal-service': 'dashboard',
+        'my-projects': 'projects',
+        'project-creation': 'creation',
+        'model-builder': 'model-builder',
+        'evaluator-management': 'evaluators',
+        'progress-monitoring': 'monitoring',
+        'results-analysis': 'analysis',
+        'export-reports': 'export',
+        'personal-settings': 'settings'
+      };
+      const mappedMenu = menuMap[externalActiveTab] || 'dashboard';
+      setActiveMenu(mappedMenu as any);
+    }
+  }, [externalActiveTab]);
 
   useEffect(() => {
     // 사용자의 프로젝트 목록 로드
@@ -294,6 +330,63 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
     return ((currentIndex + 1) / steps.length) * 100;
   };
 
+  const handleTabChange = (tab: string) => {
+    if (externalOnTabChange) {
+      // 내부 메뉴를 외부 activeTab ID로 변환
+      const tabMap: Record<string, string> = {
+        'dashboard': 'personal-service',
+        'projects': 'my-projects',
+        'creation': 'project-creation',
+        'model-builder': 'model-builder',
+        'evaluators': 'evaluator-management',
+        'monitoring': 'progress-monitoring',
+        'analysis': 'results-analysis',
+        'export': 'export-reports',
+        'settings': 'personal-settings'
+      };
+      const mappedTab = tabMap[tab] || 'personal-service';
+      externalOnTabChange(mappedTab);
+    } else {
+      setActiveMenu(tab as any);
+    }
+  };
+
+  const renderMyProjectsFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => handleTabChange('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">📂</span>
+                    내 프로젝트
+                  </h1>
+                  <p className="text-gray-600 mt-2">나의 AHP 분석 프로젝트들을 관리합니다</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="primary" onClick={() => handleTabChange('creation')}>
+                  ➕ 새 프로젝트 생성
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderMyProjects()}
+      </div>
+    </div>
+  );
+
   const renderMyProjects = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -357,6 +450,42 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
     </div>
   );
 
+  const renderProjectCreationFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => handleTabChange('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">➕</span>
+                    새 프로젝트 생성
+                  </h1>
+                  <p className="text-gray-600 mt-2">새로운 AHP 의사결정 분석 프로젝트를 만들어보세요</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="secondary" onClick={() => handleTabChange('projects')}>
+                  📂 내 프로젝트
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderProjectCreation()}
+      </div>
+    </div>
+  );
+
   const renderProjectCreation = () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">새 프로젝트 생성</h3>
@@ -409,6 +538,42 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
           </form>
         </div>
       </Card>
+    </div>
+  );
+
+  const renderEvaluatorManagementFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => handleTabChange('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">👥</span>
+                    평가자 관리
+                  </h1>
+                  <p className="text-gray-600 mt-2">프로젝트 참여자를 초대하고 관리합니다</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="secondary" onClick={() => handleTabChange('monitoring')}>
+                  📈 진행률 확인
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderEvaluatorManagement()}
+      </div>
     </div>
   );
 
@@ -481,6 +646,45 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
           ))}
         </div>
       </Card>
+    </div>
+  );
+
+  const renderProgressMonitoringFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => handleTabChange('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">📈</span>
+                    진행률 모니터링
+                  </h1>
+                  <p className="text-gray-600 mt-2">평가자별 진행 상황을 실시간으로 추적합니다</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="secondary" onClick={() => handleTabChange('evaluators')}>
+                  👥 평가자 관리
+                </Button>
+                <Button variant="secondary" onClick={() => handleTabChange('analysis')}>
+                  📊 결과 분석
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderProgressMonitoring()}
+      </div>
     </div>
   );
 
@@ -563,6 +767,45 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
           })}
         </div>
       </Card>
+    </div>
+  );
+
+  const renderResultsAnalysisFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => handleTabChange('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">📊</span>
+                    결과 분석
+                  </h1>
+                  <p className="text-gray-600 mt-2">AHP 분석 결과와 일관성을 검토합니다</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="secondary" onClick={() => handleTabChange('monitoring')}>
+                  📈 진행률 확인
+                </Button>
+                <Button variant="secondary" onClick={() => handleTabChange('export')}>
+                  📤 보고서 내보내기
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderResultsAnalysis()}
+      </div>
     </div>
   );
 
@@ -656,6 +899,42 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
           </div>
         </div>
       </Card>
+    </div>
+  );
+
+  const renderExportReportsFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => handleTabChange('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">📤</span>
+                    보고서 내보내기
+                  </h1>
+                  <p className="text-gray-600 mt-2">분석 결과를 다양한 형태로 내보냅니다</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="secondary" onClick={() => handleTabChange('analysis')}>
+                  📊 결과 분석
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderExportReports()}
+      </div>
     </div>
   );
 
@@ -807,6 +1086,37 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
     </div>
   );
 
+  const renderPersonalSettingsFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => handleTabChange('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">⚙️</span>
+                    개인 설정
+                  </h1>
+                  <p className="text-gray-600 mt-2">계정 정보와 환경 설정을 관리합니다</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderPersonalSettings()}
+      </div>
+    </div>
+  );
+
   const renderPersonalSettings = () => (
     <div className="space-y-6">
       <h3 className="text-lg font-semibold">개인 설정</h3>
@@ -906,6 +1216,80 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
     </div>
   );
 
+  const renderModelBuilderFullPage = () => (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => handleTabChange('dashboard')}
+                  className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+                >
+                  ←
+                </button>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <span className="text-4xl mr-3">🏗️</span>
+                    모델 구축
+                  </h1>
+                  <p className="text-gray-600 mt-2">단계별로 AHP 분석 모델을 구성합니다</p>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="secondary" onClick={() => handleTabChange('projects')}>
+                  📂 내 프로젝트
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {currentStep !== 'overview' ? renderStepContent() : (
+          <Card title="모델 구축">
+            <div className="space-y-6">
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-6xl mb-4">🏗️</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">모델을 구축할 프로젝트를 선택하세요</h3>
+                <p className="text-gray-600 mb-4">프로젝트를 선택하고 단계별로 모델을 구성해보세요.</p>
+                <Button variant="primary" onClick={() => handleTabChange('projects')}>
+                  프로젝트 선택하기
+                </Button>
+              </div>
+              <div className="border-t pt-6">
+                <h4 className="font-medium mb-4">모델 구축 단계</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl mb-2">1️⃣</div>
+                    <h5 className="font-medium text-gray-900 mb-1">프로젝트 설정</h5>
+                    <p className="text-xs text-gray-600">기본 정보 및 목표 설정</p>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl mb-2">2️⃣</div>
+                    <h5 className="font-medium text-gray-900 mb-1">기준 정의</h5>
+                    <p className="text-xs text-gray-600">평가 기준 및 계층 구조</p>
+                  </div>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl mb-2">3️⃣</div>
+                    <h5 className="font-medium text-gray-900 mb-1">대안 설정</h5>
+                    <p className="text-xs text-gray-600">비교할 대안들 등록</p>
+                  </div>
+                  <div className="text-center p-4 bg-orange-50 rounded-lg">
+                    <div className="text-2xl mb-2">4️⃣</div>
+                    <h5 className="font-medium text-gray-900 mb-1">평가자 배정</h5>
+                    <p className="text-xs text-gray-600">참여자 초대 및 권한 설정</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+
   const renderMenuContent = () => {
     switch (activeMenu) {
       case 'dashboard':
@@ -937,6 +1321,22 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
         return renderOverview();
     }
   };
+
+  // 개별 메뉴 페이지들은 전체 화면을 사용
+  if (externalActiveTab && externalActiveTab !== 'personal-service') {
+    return (
+      <>
+        {externalActiveTab === 'my-projects' && renderMyProjectsFullPage()}
+        {externalActiveTab === 'project-creation' && renderProjectCreationFullPage()}
+        {externalActiveTab === 'model-builder' && renderModelBuilderFullPage()}
+        {externalActiveTab === 'evaluator-management' && renderEvaluatorManagementFullPage()}
+        {externalActiveTab === 'progress-monitoring' && renderProgressMonitoringFullPage()}
+        {externalActiveTab === 'results-analysis' && renderResultsAnalysisFullPage()}
+        {externalActiveTab === 'export-reports' && renderExportReportsFullPage()}
+        {externalActiveTab === 'personal-settings' && renderPersonalSettingsFullPage()}
+      </>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
