@@ -30,6 +30,7 @@ interface UserProject {
 
 const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
   const [projects, setProjects] = useState<UserProject[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeProject, setActiveProject] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<'overview' | 'projects' | 'criteria' | 'alternatives' | 'evaluators' | 'finalize'>('overview');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');

@@ -46,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, adminType, act
     { id: 'evaluator-settings', label: '평가자 설정', icon: '⚙️' }
   ];
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const viewerMenuItems = [
     { id: 'viewer-dashboard', label: '조회 대시보드', icon: '👁️' },
     { id: 'public-projects', label: '공개 프로젝트', icon: '🌐' },
