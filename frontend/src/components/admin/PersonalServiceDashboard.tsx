@@ -44,6 +44,10 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
   const [currentStep, setCurrentStep] = useState<'overview' | 'projects' | 'criteria' | 'alternatives' | 'evaluators' | 'finalize'>('overview');
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<UserProject | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [loading, setLoading] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [error, setError] = useState<string | null>(null);
   const [projectForm, setProjectForm] = useState({
     title: '',
     description: '',
@@ -63,13 +67,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
     'dashboard'
   );
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
-  const [newProjectForm, setNewProjectForm] = useState({
-    title: '',
-    description: '',
-    objective: '',
-    evaluation_method: 'pairwise' as 'pairwise' | 'direct' | 'mixed',
-    template: 'blank' as 'blank' | 'business' | 'technical' | 'academic'
-  });
+  const [projectTemplate, setProjectTemplate] = useState<'blank' | 'business' | 'technical' | 'academic'>('blank');
 
   const projectTemplates = {
     blank: { name: '빈 프로젝트', desc: '처음부터 설정' },
@@ -138,8 +136,10 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
       objective: '',
       evaluation_method: 'pairwise'
     });
+    setProjectTemplate('blank');
     setEditingProject(null);
     setIsProjectFormOpen(false);
+    setError(null);
   };
 
   const handleCreateProject = () => {
@@ -165,13 +165,17 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
     }
   };
 
-  const handleSaveProject = () => {
+  const handleSaveProject = async () => {
     if (!projectForm.title.trim()) {
-      alert('프로젝트명을 입력해주세요.');
+      setError('프로젝트명을 입력해주세요.');
       return;
     }
 
-    if (editingProject) {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (editingProject) {
       // 편집 모드
       const updatedProject: UserProject = {
         ...editingProject,
@@ -198,55 +202,61 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
         alternatives_count: 0,
         evaluation_method: projectForm.evaluation_method
       };
-      setProjects([...projects, newProject]);
-      setSelectedProjectId(newProject.id);
+        setProjects([...projects, newProject]);
+        setSelectedProjectId(newProject.id);
+      }
+      resetProjectForm();
+    } catch (error) {
+      setError('프로젝트 저장 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
     }
-    resetProjectForm();
   };
 
-  const handleCreateNewProject = () => {
-    if (!newProjectForm.title.trim()) {
-      alert('프로젝트명을 입력해주세요.');
+  const handleCreateNewProject = async () => {
+    if (!projectForm.title.trim()) {
+      setError('프로젝트명을 입력해주세요.');
       return;
     }
 
-    const newProject: UserProject = {
-      id: Date.now().toString(),
-      title: newProjectForm.title,
-      description: newProjectForm.description,
-      objective: newProjectForm.objective,
-      status: 'draft',
-      created_at: new Date().toISOString().split('T')[0],
-      last_modified: new Date().toISOString().split('T')[0],
-      evaluator_count: 0,
-      completion_rate: 0,
-      criteria_count: 0,
-      alternatives_count: 0,
-      evaluation_method: newProjectForm.evaluation_method
-    };
+    setLoading(true);
+    setError(null);
 
-    setProjects([...projects, newProject]);
-    setSelectedProjectId(newProject.id);
-    
-    // 템플맿에 따라 기본 데이터 설정
-    if (newProjectForm.template !== 'blank') {
-      // 모델 구축 페이지로 이동
-      setCurrentStep('criteria');
-      handleTabChange('model-builder');
-    } else {
-      handleTabChange('projects');
+    try {
+      const newProject: UserProject = {
+        id: `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        title: projectForm.title,
+        description: projectForm.description,
+        objective: projectForm.objective,
+        status: 'draft',
+        created_at: new Date().toISOString().split('T')[0],
+        last_modified: new Date().toISOString().split('T')[0],
+        evaluator_count: 0,
+        completion_rate: 0,
+        criteria_count: 0,
+        alternatives_count: 0,
+        evaluation_method: projectForm.evaluation_method
+      };
+
+      setProjects([...projects, newProject]);
+      setSelectedProjectId(newProject.id);
+      
+      // 템플맿에 따라 기본 데이터 설정
+      if (projectTemplate !== 'blank') {
+        // 모델 구축 페이지로 이동
+        setCurrentStep('criteria');
+        handleTabChange('model-builder');
+      } else {
+        handleTabChange('projects');
+      }
+
+      resetProjectForm();
+      // 성공 메시지는 사용자 인터페이스에서 표시
+    } catch (error) {
+      setError('프로젝트 생성 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
     }
-
-    // 폼 초기화
-    setNewProjectForm({
-      title: '',
-      description: '',
-      objective: '',
-      evaluation_method: 'pairwise',
-      template: 'blank'
-    });
-
-    alert('프로젝트가 성공적으로 생성되었습니다!');
   };
 
   const renderOverview = () => (
@@ -729,9 +739,11 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
           {Object.entries(projectTemplates).map(([key, template]) => (
             <button
               key={key}
-              onClick={() => setNewProjectForm({...newProjectForm, template: key as any})}
+              onClick={() => setProjectTemplate(key as any)}
+              aria-label={`${template.name} 템플맿 선택 - ${template.desc}`}
+              aria-pressed={projectTemplate === key}
               className={`p-4 text-center border-2 rounded-lg transition-all ${
-                newProjectForm.template === key
+                projectTemplate === key
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
               }`}
@@ -773,8 +785,8 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트명</label>
               <input 
                 type="text" 
-                value={newProjectForm.title}
-                onChange={(e) => setNewProjectForm({...newProjectForm, title: e.target.value})}
+                value={projectForm.title}
+                onChange={(e) => setProjectForm({...projectForm, title: e.target.value})}
                 className="w-full border border-gray-300 rounded px-3 py-2" 
                 placeholder="예: AI 도구 선택을 위한 중요도 분석" 
               />
@@ -782,8 +794,8 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
               <textarea 
-                value={newProjectForm.description}
-                onChange={(e) => setNewProjectForm({...newProjectForm, description: e.target.value})}
+                value={projectForm.description}
+                onChange={(e) => setProjectForm({...projectForm, description: e.target.value})}
                 className="w-full border border-gray-300 rounded px-3 py-2 h-20" 
                 placeholder="프로젝트의 목적과 배경을 설명해주세요"
               />
@@ -791,8 +803,8 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">분석 목표</label>
               <textarea 
-                value={newProjectForm.objective}
-                onChange={(e) => setNewProjectForm({...newProjectForm, objective: e.target.value})}
+                value={projectForm.objective}
+                onChange={(e) => setProjectForm({...projectForm, objective: e.target.value})}
                 className="w-full border border-gray-300 rounded px-3 py-2 h-16" 
                 placeholder="이 분석을 통해 달성하고자 하는 구체적인 목표"
               />
@@ -1654,6 +1666,8 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveMenu(item.id as any)}
+                aria-label={`${item.label} - ${item.desc}`}
+                aria-pressed={activeMenu === item.id}
                 className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
                   activeMenu === item.id
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -1679,6 +1693,8 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
               <button
                 key={item.id}
                 onClick={() => setActiveMenu(item.id as any)}
+                aria-label={`${item.label} - ${item.desc}`}
+                aria-pressed={activeMenu === item.id}
                 className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
                   activeMenu === item.id
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
