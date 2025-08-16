@@ -48,6 +48,15 @@ interface SystemMetrics {
   errors24h: number;
 }
 
+interface AuditLog {
+  time: string;
+  user: string;
+  ip: string;
+  action: string;
+  category: string;
+  status: string;
+}
+
 const SuperAdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -81,9 +90,35 @@ const SuperAdminDashboard: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [activityFilter, setActivityFilter] = useState('all');
+  const [userFilter, setUserFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilterAudit, setStatusFilterAudit] = useState('all');
+  const [searchTermAudit, setSearchTermAudit] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [systemSettings, setSystemSettings] = useState({
+    autoBackup: true,
+    emailNotifications: true,
+    logRetention: '90',
+    maxSessions: '100',
+    securityLevel: 'high',
+    maintenanceMode: false,
+    sessionTimeout: '1',
+    passwordMinLength: 8,
+    loginAttemptLimit: 5,
+    apiAccessControl: true,
+    systemErrorAlerts: true,
+    backupRetention: '90',
+    backupCompleteAlerts: true,
+    performanceThresholdAlerts: false,
+    newUserSignupAlerts: true,
+    evaluationCompleteAlerts: true,
+    abnormalActivityAlerts: false,
+    backupFrequency: 'weekly',
+    backupTime: '02:00'
+  });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'projects' | 'system' | 'monitoring' | 'database' | 'audit' | 'settings' | 'backup'>('dashboard');
 
   useEffect(() => {
@@ -112,6 +147,7 @@ const SuperAdminDashboard: React.FC = () => {
       clearInterval(interval);
       clearInterval(activityInterval);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   useEffect(() => {
@@ -167,11 +203,11 @@ const SuperAdminDashboard: React.FC = () => {
         (userFilter === 'system' && log.user === 'system');
       
       const matchesCategory = categoryFilter === 'all' || log.category === categoryFilter;
-      const matchesStatus = statusFilter2 === 'all' || log.status === statusFilter2;
-      const matchesSearch = searchQuery === '' || 
-        log.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.ip.includes(searchQuery);
+      const matchesStatus = statusFilterAudit === 'all' || log.status === statusFilterAudit;
+      const matchesSearch = searchTermAudit === '' || 
+        log.user.toLowerCase().includes(searchTermAudit.toLowerCase()) ||
+        log.action.toLowerCase().includes(searchTermAudit.toLowerCase()) ||
+        log.ip.includes(searchTermAudit);
       
       const matchesDate = dateFilter === '' || log.time.startsWith(dateFilter);
       
@@ -1079,8 +1115,8 @@ const SuperAdminDashboard: React.FC = () => {
               <input
                 type="text"
                 placeholder="사용자, 활동, IP 검색..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={searchTermAudit}
+                onChange={(e) => setSearchTermAudit(e.target.value)}
                 className="border border-gray-300 rounded px-3 py-2 text-sm"
               />
               <select 
@@ -1107,8 +1143,8 @@ const SuperAdminDashboard: React.FC = () => {
                 <option value="navigation">내비게이션</option>
               </select>
               <select 
-                value={statusFilter2}
-                onChange={(e) => setStatusFilter2(e.target.value)}
+                value={statusFilterAudit}
+                onChange={(e) => setStatusFilterAudit(e.target.value)}
                 className="border border-gray-300 rounded px-3 py-2 text-sm"
               >
                 <option value="all">모든 상태</option>
@@ -1127,10 +1163,10 @@ const SuperAdminDashboard: React.FC = () => {
                 variant="secondary" 
                 size="sm"
                 onClick={() => {
-                  setSearchQuery('');
+                  setSearchTermAudit('');
                   setUserFilter('all');
                   setCategoryFilter('all');
-                  setStatusFilter2('all');
+                  setStatusFilterAudit('all');
                   setDateFilter('');
                 }}
               >
@@ -1231,6 +1267,9 @@ const SuperAdminDashboard: React.FC = () => {
         autoBackup: true,
         emailNotifications: true,
         logRetention: '90',
+        maxSessions: '100',
+        securityLevel: 'high',
+        maintenanceMode: false,
         sessionTimeout: '1',
         passwordMinLength: 8,
         loginAttemptLimit: 5,
