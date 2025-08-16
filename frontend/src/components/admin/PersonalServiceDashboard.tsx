@@ -828,7 +828,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
               </select>
             </div>
             <div className="flex justify-end space-x-3">
-              <Button variant="secondary" onClick={() => setActiveMenu('projects')}>
+              <Button variant="secondary" onClick={() => handleTabChange('projects')}>
                 취소
               </Button>
               <Button variant="primary" onClick={handleCreateNewProject}>
@@ -1659,7 +1659,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
         return currentStep !== 'overview' ? renderStepContent() : (
           <Card title="모델 구축">
             <p>프로젝트를 선택하고 단계별로 모델을 구성해보세요.</p>
-            <Button variant="secondary" onClick={() => setActiveMenu('projects')}>
+            <Button variant="secondary" onClick={() => handleTabChange('projects')}>
               프로젝트 선택하기
             </Button>
           </Card>
@@ -1732,7 +1732,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveMenu(item.id as any)}
+                onClick={() => handleTabChange(item.id)}
                 aria-label={`${item.label} - ${item.desc}`}
                 aria-pressed={activeMenu === item.id}
                 className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
@@ -1759,7 +1759,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveMenu(item.id as any)}
+                onClick={() => handleTabChange(item.id)}
                 aria-label={`${item.label} - ${item.desc}`}
                 aria-pressed={activeMenu === item.id}
                 className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${

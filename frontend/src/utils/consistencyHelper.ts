@@ -54,7 +54,7 @@ export function analyzeConsistency(
   
   for (let i = 0; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
-      const analysis = analyzeIndirecfMatrix[i][j], i, j, matrix);
+      const analysis = analyzeIndirectPath(matrix[i][j], i, j, matrix);
       if (analysis.impactOnCR > 0.01) { // Only consider pairs with significant impact
         inconsistentPairs.push({
           element1: elementNames[i],
