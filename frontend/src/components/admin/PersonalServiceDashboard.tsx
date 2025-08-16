@@ -33,6 +33,7 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeProject, setActiveProject] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<'overview' | 'projects' | 'criteria' | 'alternatives' | 'evaluators' | 'finalize'>('overview');
+  const [activeMenu, setActiveMenu] = useState<'dashboard' | 'projects' | 'creation' | 'model-builder' | 'evaluators' | 'monitoring' | 'analysis' | 'export' | 'settings'>('dashboard');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   useEffect(() => {
@@ -293,6 +294,650 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
     return ((currentIndex + 1) / steps.length) * 100;
   };
 
+  const renderMyProjects = () => (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">내 프로젝트</h3>
+        <Button variant="primary" onClick={() => setActiveMenu('creation')}>
+          ➕ 새 프로젝트 생성
+        </Button>
+      </div>
+
+      <div className="grid gap-6">
+        {projects.map((project) => (
+          <Card key={project.id} title={project.title}>
+            <div className="space-y-4">
+              <p className="text-gray-600">{project.description}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="font-medium text-blue-600">{project.evaluator_count}명</div>
+                  <div className="text-gray-500">평가자</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-medium text-green-600">{project.completion_rate}%</div>
+                  <div className="text-gray-500">완료율</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-medium text-purple-600">{project.criteria_count}개</div>
+                  <div className="text-gray-500">기준</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-medium text-orange-600">{project.alternatives_count}개</div>
+                  <div className="text-gray-500">대안</div>
+                </div>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className={`px-2 py-1 rounded text-xs ${
+                  project.status === 'active' ? 'bg-green-100 text-green-800' :
+                  project.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {project.status === 'active' ? '진행중' : 
+                   project.status === 'completed' ? '완료' : '준비중'}
+                </span>
+                <div className="flex space-x-2">
+                  <Button variant="secondary" size="sm" onClick={() => {
+                    setSelectedProjectId(project.id);
+                    setActiveMenu('model-builder');
+                  }}>
+                    모델 편집
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => {
+                    setSelectedProjectId(project.id);
+                    setActiveMenu('analysis');
+                  }}>
+                    결과 분석
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderProjectCreation = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">새 프로젝트 생성</h3>
+      
+      <Card title="프로젝트 생성 마법사">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 border-2 border-blue-200 bg-blue-50 rounded-lg">
+              <div className="text-2xl mb-2">📋</div>
+              <h4 className="font-medium text-gray-900 mb-1">기본 정보</h4>
+              <p className="text-xs text-gray-600">프로젝트명, 설명, 목적</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <div className="text-2xl mb-2">🎯</div>
+              <h4 className="font-medium text-gray-900 mb-1">목표 설정</h4>
+              <p className="text-xs text-gray-600">의사결정 목표 및 범위</p>
+            </div>
+            <div className="text-center p-4 border rounded-lg">
+              <div className="text-2xl mb-2">⚖️</div>
+              <h4 className="font-medium text-gray-900 mb-1">평가 방법</h4>
+              <p className="text-xs text-gray-600">AHP 평가 방식 선택</p>
+            </div>
+          </div>
+
+          <form className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">프로젝트명</label>
+              <input type="text" className="w-full border border-gray-300 rounded px-3 py-2" placeholder="예: AI 도구 선택을 위한 중요도 분석" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+              <textarea className="w-full border border-gray-300 rounded px-3 py-2 h-20" placeholder="프로젝트의 목적과 배경을 설명해주세요"></textarea>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">평가 방법</label>
+              <select className="w-full border border-gray-300 rounded px-3 py-2">
+                <option>쌍대비교 (권장)</option>
+                <option>직접입력</option>
+                <option>혼합 방식</option>
+              </select>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <Button variant="secondary" onClick={() => setActiveMenu('projects')}>
+                취소
+              </Button>
+              <Button variant="primary">
+                프로젝트 생성
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderEvaluatorManagement = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">평가자 관리</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="평가자 초대">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">이메일 주소</label>
+              <input type="email" className="w-full border border-gray-300 rounded px-3 py-2" placeholder="evaluator@company.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">역할</label>
+              <select className="w-full border border-gray-300 rounded px-3 py-2">
+                <option>평가자</option>
+                <option>관찰자</option>
+              </select>
+            </div>
+            <Button variant="primary" className="w-full">
+              초대 발송
+            </Button>
+          </div>
+        </Card>
+
+        <Card title="접근 코드 생성">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              평가자들이 사용할 수 있는 접근 코드를 생성합니다.
+            </p>
+            <div className="bg-gray-50 p-3 rounded font-mono text-center">
+              AHP-2024-AI-001
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="secondary" className="flex-1">
+                복사
+              </Button>
+              <Button variant="secondary" className="flex-1">
+                새 코드 생성
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="현재 평가자 목록">
+        <div className="space-y-3">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="flex justify-between items-center p-3 border rounded">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
+                  P{i + 1}
+                </div>
+                <div>
+                  <div className="font-medium">평가자{i + 1}@company.com</div>
+                  <div className="text-xs text-gray-500">초대 발송됨 · 대기중</div>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
+                  대기중
+                </span>
+                <Button variant="secondary" size="sm">
+                  재발송
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderProgressMonitoring = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">진행률 모니터링</h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card title="전체 진행률">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-blue-600">85%</div>
+            <div className="text-sm text-gray-500 mt-1">26명 중 22명 완료</div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+              <div className="bg-blue-600 h-2 rounded-full" style={{ width: '85%' }}></div>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="평균 소요 시간">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-600">12분</div>
+            <div className="text-sm text-gray-500 mt-1">평가 완료까지</div>
+            <div className="text-xs text-green-600 mt-2">🟢 목표 시간 내</div>
+          </div>
+        </Card>
+
+        <Card title="일관성 품질">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-purple-600">0.08</div>
+            <div className="text-sm text-gray-500 mt-1">평균 CR 값</div>
+            <div className="text-xs text-green-600 mt-2">🟢 우수</div>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="평가자별 진행 현황">
+        <div className="space-y-3 max-h-80 overflow-y-auto">
+          {Array.from({ length: 26 }, (_, i) => {
+            const progress = Math.floor(Math.random() * 101);
+            const status = progress === 100 ? 'completed' : progress > 50 ? 'in_progress' : 'not_started';
+            
+            return (
+              <div key={i} className="flex justify-between items-center p-3 border rounded">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center text-white text-sm">
+                    P{String(i + 1).padStart(2, '0')}
+                  </div>
+                  <div>
+                    <div className="font-medium">평가자{i + 1}@company.com</div>
+                    <div className="text-xs text-gray-500">
+                      {status === 'completed' ? '평가 완료' :
+                       status === 'in_progress' ? '평가 진행중' : '시작 전'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="text-right">
+                    <div className="text-sm font-medium">{progress}%</div>
+                    <div className="w-20 bg-gray-200 rounded-full h-1.5">
+                      <div 
+                        className={`h-1.5 rounded-full ${
+                          status === 'completed' ? 'bg-green-500' :
+                          status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-300'
+                        }`}
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    status === 'completed' ? 'bg-green-100 text-green-800' :
+                    status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {status === 'completed' ? '완료' :
+                     status === 'in_progress' ? '진행중' : '대기'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderResultsAnalysis = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">결과 분석</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="최종 순위">
+          <div className="space-y-3">
+            {[
+              { rank: 1, name: '코딩 작성 속도 향상', weight: 16.959, color: 'text-yellow-600' },
+              { rank: 2, name: '코드 품질 개선 및 최적화', weight: 15.672, color: 'text-gray-500' },
+              { rank: 3, name: '반복 작업 최소화', weight: 13.382, color: 'text-orange-600' },
+              { rank: 4, name: '형상관리 및 배포 지원', weight: 11.591, color: 'text-blue-600' },
+              { rank: 5, name: '디버깅 시간 단축', weight: 10.044, color: 'text-green-600' }
+            ].map((item) => (
+              <div key={item.rank} className="flex justify-between items-center p-3 border rounded">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm ${
+                    item.rank === 1 ? 'bg-yellow-500' :
+                    item.rank === 2 ? 'bg-gray-500' :
+                    item.rank === 3 ? 'bg-orange-500' : 'bg-blue-500'
+                  }`}>
+                    {item.rank}
+                  </div>
+                  <div className="font-medium">{item.name}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold">{item.weight}%</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card title="일관성 분석">
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">0.00192</div>
+              <div className="text-sm text-gray-500">통합 일관성 비율</div>
+              <div className="text-xs text-green-600 mt-1">🟢 매우 우수 (&lt; 0.1)</div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm">기준 일관성</span>
+                <span className="text-sm font-medium text-green-600">0.001</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm">대안 일관성 (평균)</span>
+                <span className="text-sm font-medium text-green-600">0.003</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm">전체 평가자</span>
+                <span className="text-sm font-medium">26명</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="민감도 분석">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="font-medium mb-3">기준 가중치 변화 시뮬레이션</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm">개발 생산성 효율화</span>
+                <input type="range" min="0" max="100" defaultValue="40" className="w-24" />
+                <span className="text-sm font-medium w-12 text-right">40%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">코딩 실무 품질 적합화</span>
+                <input type="range" min="0" max="100" defaultValue="30" className="w-24" />
+                <span className="text-sm font-medium w-12 text-right">30%</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm">개발 프로세스 자동화</span>
+                <input type="range" min="0" max="100" defaultValue="30" className="w-24" />
+                <span className="text-sm font-medium w-12 text-right">30%</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4 className="font-medium mb-3">예상 순위 변화</h4>
+            <div className="text-sm text-gray-600">
+              <p>• 현재 설정에서는 순위 변화 없음</p>
+              <p>• 생산성 가중치 20% 감소 시: 2위↔3위 변동 가능</p>
+              <p>• 품질 가중치 50% 증가 시: 1위↔2위 변동 가능</p>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderExportReports = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">보고서 내보내기</h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card title="Excel 보고서">
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              상세한 데이터와 계산 과정이 포함된 스프레드시트
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">원시 데이터</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">계산 과정</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">차트</span>
+              </label>
+            </div>
+            <Button variant="primary" className="w-full">
+              📊 Excel 다운로드
+            </Button>
+          </div>
+        </Card>
+
+        <Card title="PDF 보고서">
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              프레젠테이션용 요약 보고서
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">요약 정보</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">시각화 차트</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" />
+                <span className="ml-2 text-sm">상세 분석</span>
+              </label>
+            </div>
+            <Button variant="primary" className="w-full">
+              📄 PDF 다운로드
+            </Button>
+          </div>
+        </Card>
+
+        <Card title="PowerPoint">
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              발표용 슬라이드 자료
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">개요 슬라이드</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">결과 차트</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">결론 및 제안</span>
+              </label>
+            </div>
+            <Button variant="primary" className="w-full">
+              📺 PPT 다운로드
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="맞춤형 보고서">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">보고서 형식</label>
+              <select className="w-full border border-gray-300 rounded px-3 py-2">
+                <option>상세 분석 보고서</option>
+                <option>요약 보고서</option>
+                <option>평가자별 개별 보고서</option>
+                <option>비교 분석 보고서</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">언어</label>
+              <select className="w-full border border-gray-300 rounded px-3 py-2">
+                <option>한국어</option>
+                <option>English</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">포함할 섹션</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">프로젝트 개요</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">방법론 설명</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">결과 분석</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" />
+                <span className="ml-2 text-sm">민감도 분석</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">일관성 검증</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" />
+                <span className="ml-2 text-sm">평가자 의견</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">결론 및 제안</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" />
+                <span className="ml-2 text-sm">부록</span>
+              </label>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="primary">
+              맞춤 보고서 생성
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderPersonalSettings = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">개인 설정</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="계정 정보">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+              <input type="text" defaultValue={`${user.first_name} ${user.last_name}`} className="w-full border border-gray-300 rounded px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+              <input type="email" defaultValue={user.email} className="w-full border border-gray-300 rounded px-3 py-2" readOnly />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">조직/부서</label>
+              <input type="text" placeholder="예: 개발팀" className="w-full border border-gray-300 rounded px-3 py-2" />
+            </div>
+            <Button variant="primary">
+              정보 업데이트
+            </Button>
+          </div>
+        </Card>
+
+        <Card title="비밀번호 변경">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">현재 비밀번호</label>
+              <input type="password" className="w-full border border-gray-300 rounded px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호</label>
+              <input type="password" className="w-full border border-gray-300 rounded px-3 py-2" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
+              <input type="password" className="w-full border border-gray-300 rounded px-3 py-2" />
+            </div>
+            <Button variant="primary">
+              비밀번호 변경
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="워크플로우 설정">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <h4 className="font-medium">기본 설정</h4>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">자동 저장 간격</span>
+              <select className="text-sm border border-gray-300 rounded px-2 py-1">
+                <option>30초</option>
+                <option selected>1분</option>
+                <option>5분</option>
+              </select>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">기본 템플릿</span>
+              <select className="text-sm border border-gray-300 rounded px-2 py-1">
+                <option>기본</option>
+                <option>간단</option>
+                <option>상세</option>
+              </select>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">화면 레이아웃</span>
+              <select className="text-sm border border-gray-300 rounded px-2 py-1">
+                <option>컴팩트</option>
+                <option selected>표준</option>
+                <option>와이드</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h4 className="font-medium">알림 설정</h4>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <span className="ml-2 text-sm">평가 완료 알림</span>
+            </label>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <span className="ml-2 text-sm">프로젝트 상태 변경</span>
+            </label>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" />
+              <span className="ml-2 text-sm">주간 진행률 리포트</span>
+            </label>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" />
+              <span className="ml-2 text-sm">시스템 업데이트</span>
+            </label>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderMenuContent = () => {
+    switch (activeMenu) {
+      case 'dashboard':
+        return renderOverview();
+      case 'projects':
+        return renderMyProjects();
+      case 'creation':
+        return renderProjectCreation();
+      case 'model-builder':
+        return currentStep !== 'overview' ? renderStepContent() : (
+          <Card title="모델 구축">
+            <p>프로젝트를 선택하고 단계별로 모델을 구성해보세요.</p>
+            <Button variant="secondary" onClick={() => setActiveMenu('projects')}>
+              프로젝트 선택하기
+            </Button>
+          </Card>
+        );
+      case 'evaluators':
+        return renderEvaluatorManagement();
+      case 'monitoring':
+        return renderProgressMonitoring();
+      case 'analysis':
+        return renderResultsAnalysis();
+      case 'export':
+        return renderExportReports();
+      case 'settings':
+        return renderPersonalSettings();
+      default:
+        return renderOverview();
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
@@ -317,11 +962,40 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
         </div>
       </div>
 
-      {/* Progress Bar (only show when in project creation flow) */}
-      {currentStep !== 'overview' && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+      {/* Navigation Tabs */}
+      <div className="border-b border-gray-200 bg-white rounded-t-lg">
+        <nav className="-mb-px flex space-x-4 overflow-x-auto px-6 pt-4">
+          {[
+            { id: 'dashboard', label: '대시보드', icon: '🏠' },
+            { id: 'projects', label: '내 프로젝트', icon: '📂' },
+            { id: 'creation', label: '새 프로젝트', icon: '➕' },
+            { id: 'model-builder', label: '모델 구축', icon: '🏗️' },
+            { id: 'evaluators', label: '평가자 관리', icon: '👥' },
+            { id: 'monitoring', label: '진행률 모니터링', icon: '📈' },
+            { id: 'analysis', label: '결과 분석', icon: '📊' },
+            { id: 'export', label: '보고서 내보내기', icon: '📤' },
+            { id: 'settings', label: '개인 설정', icon: '⚙️' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveMenu(tab.id as any)}
+              className={`py-2 px-3 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeMenu === tab.id
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Progress Bar (only show when in model builder flow) */}
+      {activeMenu === 'model-builder' && currentStep !== 'overview' && (
+        <div className="bg-white border-x border-gray-200 p-4">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-medium text-gray-900">프로젝트 설정 진행상황</h3>
+            <h3 className="font-medium text-gray-900">모델 구축 진행상황</h3>
             <span className="text-sm text-gray-600">{Math.round(getStepProgress())}% 완료</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
@@ -341,9 +1015,9 @@ const PersonalServiceDashboard: React.FC<PersonalServiceProps> = ({ user }) => {
       )}
 
       {/* Main Content */}
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="bg-white rounded-b-lg border border-gray-200">
         <div className="p-6">
-          {renderStepContent()}
+          {renderMenuContent()}
         </div>
       </div>
 

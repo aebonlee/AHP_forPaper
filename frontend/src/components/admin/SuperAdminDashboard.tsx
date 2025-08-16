@@ -44,7 +44,7 @@ const SuperAdminDashboard: React.FC = () => {
     systemUptime: '0일',
     storageUsed: '0MB'
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'projects' | 'system'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'projects' | 'system' | 'monitoring' | 'database' | 'audit' | 'settings' | 'backup'>('dashboard');
 
   useEffect(() => {
     // 시스템 통계 로드
@@ -393,6 +393,443 @@ const SuperAdminDashboard: React.FC = () => {
     </div>
   );
 
+  const renderMonitoring = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">시스템 모니터링</h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card title="🔥 CPU 사용률">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-600">23%</div>
+            <div className="text-sm text-gray-500 mt-1">정상</div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+              <div className="bg-blue-600 h-2 rounded-full" style={{ width: '23%' }}></div>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="💾 메모리 사용량">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-green-600">1.8GB</div>
+            <div className="text-sm text-gray-500 mt-1">2GB 중</div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+              <div className="bg-green-600 h-2 rounded-full" style={{ width: '90%' }}></div>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="⚡ 응답 시간">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-yellow-600">125ms</div>
+            <div className="text-sm text-gray-500 mt-1">평균</div>
+            <div className="text-xs text-green-600 mt-2">🟢 우수</div>
+          </div>
+        </Card>
+
+        <Card title="🌐 네트워크">
+          <div className="text-center">
+            <div className="text-sm text-gray-600">송신: 2.3MB/s</div>
+            <div className="text-sm text-gray-600">수신: 1.8MB/s</div>
+            <div className="text-xs text-green-600 mt-2">🟢 정상</div>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="📊 실시간 활동 로그">
+        <div className="space-y-2 max-h-80 overflow-y-auto">
+          {[
+            { time: '10:32:15', user: 'admin@company.com', action: '시스템 대시보드 조회', status: 'success' },
+            { time: '10:31:42', user: 'p001@evaluator.com', action: '평가 완료: AI 개발 활용 방안', status: 'success' },
+            { time: '10:30:18', user: 'p002@evaluator.com', action: '평가 시작: 쌍대비교', status: 'info' },
+            { time: '10:29:55', user: 'manager@company.com', action: '프로젝트 상태 변경', status: 'warning' },
+            { time: '10:28:33', user: 'system', action: '자동 백업 실행', status: 'success' }
+          ].map((log, index) => (
+            <div key={index} className="flex items-center justify-between text-xs bg-gray-50 p-2 rounded">
+              <div className="flex items-center space-x-3">
+                <span className="text-gray-500">[{log.time}]</span>
+                <span className="font-medium">{log.user}</span>
+                <span>{log.action}</span>
+              </div>
+              <span className={`px-2 py-1 rounded text-xs ${
+                log.status === 'success' ? 'bg-green-100 text-green-800' :
+                log.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-blue-100 text-blue-800'
+              }`}>
+                {log.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderDatabase = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">데이터베이스 관리</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="🗄️ 데이터베이스 상태">
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">연결 상태</span>
+              <span className="text-sm font-medium text-green-600">🟢 정상</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">DB 종류</span>
+              <span className="text-sm font-medium">PostgreSQL</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">DB 크기</span>
+              <span className="text-sm font-medium">1.2GB</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">활성 연결</span>
+              <span className="text-sm font-medium">3개</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-gray-600">마지막 백업</span>
+              <span className="text-sm font-medium">2시간 전</span>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="📊 테이블 현황">
+          <div className="space-y-3">
+            {[
+              { table: 'users', count: 27, size: '45MB' },
+              { table: 'projects', count: 1, size: '12MB' },
+              { table: 'criteria', count: 12, size: '8MB' },
+              { table: 'alternatives', count: 9, size: '6MB' },
+              { table: 'evaluation_sessions', count: 26, size: '15MB' },
+              { table: 'ahp_results', count: 1, size: '25MB' }
+            ].map((table, index) => (
+              <div key={index} className="flex justify-between items-center text-sm">
+                <span className="font-medium">{table.table}</span>
+                <div className="text-right">
+                  <div className="text-gray-600">{table.count}개 레코드</div>
+                  <div className="text-xs text-gray-500">{table.size}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      <Card title="🔧 데이터베이스 관리 도구">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Button variant="secondary" className="w-full">
+            💾 즉시 백업
+          </Button>
+          <Button variant="secondary" className="w-full">
+            🔄 인덱스 재구성
+          </Button>
+          <Button variant="secondary" className="w-full">
+            📊 쿼리 성능 분석
+          </Button>
+          <Button variant="secondary" className="w-full">
+            🧹 로그 정리
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderAudit = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">감사 로그</h3>
+
+      <div className="flex justify-between items-center">
+        <div className="flex space-x-4">
+          <select className="border border-gray-300 rounded px-3 py-2 text-sm">
+            <option>모든 사용자</option>
+            <option>관리자만</option>
+            <option>평가자만</option>
+          </select>
+          <select className="border border-gray-300 rounded px-3 py-2 text-sm">
+            <option>모든 활동</option>
+            <option>로그인/로그아웃</option>
+            <option>프로젝트 관리</option>
+            <option>평가 활동</option>
+            <option>시스템 설정</option>
+          </select>
+          <input 
+            type="date" 
+            className="border border-gray-300 rounded px-3 py-2 text-sm"
+            defaultValue={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+        <Button variant="secondary" size="sm">
+          📥 로그 내보내기
+        </Button>
+      </div>
+
+      <Card title="📋 활동 내역">
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {[
+            { time: '2024-02-20 10:32:15', user: 'admin@company.com', ip: '192.168.1.100', action: '시스템 대시보드 접근', category: 'navigation', status: 'success' },
+            { time: '2024-02-20 10:31:42', user: 'p001@evaluator.com', ip: '192.168.1.101', action: 'AI 개발 활용 방안 평가 완료', category: 'evaluation', status: 'success' },
+            { time: '2024-02-20 10:30:18', user: 'p002@evaluator.com', ip: '192.168.1.102', action: '쌍대비교 평가 시작', category: 'evaluation', status: 'info' },
+            { time: '2024-02-20 10:29:55', user: 'manager@company.com', ip: '192.168.1.103', action: '프로젝트 상태 변경: active → completed', category: 'project', status: 'warning' },
+            { time: '2024-02-20 10:28:33', user: 'system', ip: '-', action: '자동 백업 실행', category: 'system', status: 'success' },
+            { time: '2024-02-20 10:27:12', user: 'admin@company.com', ip: '192.168.1.100', action: '새 사용자 생성: test@example.com', category: 'user', status: 'success' },
+            { time: '2024-02-20 10:25:45', user: 'p003@evaluator.com', ip: '192.168.1.104', action: '로그인 시도 실패', category: 'auth', status: 'error' }
+          ].map((log, index) => (
+            <div key={index} className="border-l-4 border-l-blue-500 bg-gray-50 p-3 rounded-r">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 text-sm">
+                    <span className="font-medium text-gray-900">{log.user}</span>
+                    <span className="text-gray-500">({log.ip})</span>
+                    <span className={`px-2 py-1 rounded text-xs ${
+                      log.category === 'auth' ? 'bg-purple-100 text-purple-800' :
+                      log.category === 'evaluation' ? 'bg-green-100 text-green-800' :
+                      log.category === 'project' ? 'bg-blue-100 text-blue-800' :
+                      log.category === 'user' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {log.category}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-700 mt-1">{log.action}</div>
+                  <div className="text-xs text-gray-500 mt-1">{log.time}</div>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs ${
+                  log.status === 'success' ? 'bg-green-100 text-green-800' :
+                  log.status === 'error' ? 'bg-red-100 text-red-800' :
+                  log.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-blue-100 text-blue-800'
+                }`}>
+                  {log.status}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">시스템 설정</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="🔧 전역 설정">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">자동 백업</span>
+              <label className="inline-flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">활성화</span>
+              </label>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">이메일 알림</span>
+              <label className="inline-flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">활성화</span>
+              </label>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">로그 보관 정책</span>
+              <select className="text-sm border border-gray-300 rounded px-2 py-1">
+                <option>30일</option>
+                <option>60일</option>
+                <option selected>90일</option>
+              </select>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">세션 타임아웃</span>
+              <select className="text-sm border border-gray-300 rounded px-2 py-1">
+                <option>30분</option>
+                <option selected>1시간</option>
+                <option>2시간</option>
+                <option>4시간</option>
+              </select>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="🔐 보안 정책">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">비밀번호 최소 길이</span>
+              <input type="number" defaultValue="8" min="6" max="20" className="w-16 text-sm border border-gray-300 rounded px-2 py-1" />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">로그인 시도 제한</span>
+              <input type="number" defaultValue="5" min="3" max="10" className="w-16 text-sm border border-gray-300 rounded px-2 py-1" />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">API 접근 제한</span>
+              <label className="inline-flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">활성화</span>
+              </label>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">IP 화이트리스트</span>
+              <Button variant="secondary" size="sm">
+                관리
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="📧 알림 설정">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">시스템 알림</h4>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <span className="ml-2 text-sm">시스템 오류</span>
+            </label>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <span className="ml-2 text-sm">백업 완료</span>
+            </label>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" />
+              <span className="ml-2 text-sm">성능 임계치 초과</span>
+            </label>
+          </div>
+          <div className="space-y-3">
+            <h4 className="font-medium text-sm">사용자 알림</h4>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <span className="ml-2 text-sm">새 사용자 가입</span>
+            </label>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" defaultChecked />
+              <span className="ml-2 text-sm">평가 완료</span>
+            </label>
+            <label className="flex items-center">
+              <input type="checkbox" className="form-checkbox" />
+              <span className="ml-2 text-sm">비정상 활동 감지</span>
+            </label>
+          </div>
+        </div>
+      </Card>
+
+      <div className="flex justify-end space-x-3">
+        <Button variant="secondary">
+          취소
+        </Button>
+        <Button variant="primary">
+          설정 저장
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderBackup = () => (
+    <div className="space-y-6">
+      <h3 className="text-lg font-semibold">백업 및 복원</h3>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="⚡ 즉시 백업">
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              전체 시스템 데이터를 즉시 백업합니다.
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">사용자 데이터</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">프로젝트 데이터</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">평가 결과</span>
+              </label>
+              <label className="flex items-center">
+                <input type="checkbox" className="form-checkbox" />
+                <span className="ml-2 text-sm">시스템 설정</span>
+              </label>
+            </div>
+            <Button variant="primary" className="w-full">
+              💾 지금 백업 실행
+            </Button>
+          </div>
+        </Card>
+
+        <Card title="⏰ 자동 백업 설정">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">자동 백업</span>
+              <label className="inline-flex items-center">
+                <input type="checkbox" className="form-checkbox" defaultChecked />
+                <span className="ml-2 text-sm">활성화</span>
+              </label>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">백업 주기</span>
+              <select className="text-sm border border-gray-300 rounded px-2 py-1">
+                <option>매일</option>
+                <option selected>매주</option>
+                <option>매월</option>
+              </select>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">백업 시간</span>
+              <input type="time" defaultValue="02:00" className="text-sm border border-gray-300 rounded px-2 py-1" />
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">보관 기간</span>
+              <select className="text-sm border border-gray-300 rounded px-2 py-1">
+                <option>7일</option>
+                <option>30일</option>
+                <option selected>90일</option>
+                <option>1년</option>
+              </select>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <Card title="📥 백업 파일 목록">
+        <div className="space-y-3">
+          {[
+            { date: '2024-02-20 02:00', size: '1.2GB', type: 'auto', status: 'success' },
+            { date: '2024-02-19 15:30', size: '1.1GB', type: 'manual', status: 'success' },
+            { date: '2024-02-19 02:00', size: '1.1GB', type: 'auto', status: 'success' },
+            { date: '2024-02-18 02:00', size: '1.0GB', type: 'auto', status: 'success' },
+            { date: '2024-02-17 02:00', size: '980MB', type: 'auto', status: 'failed' }
+          ].map((backup, index) => (
+            <div key={index} className="flex justify-between items-center p-3 border rounded">
+              <div className="flex items-center space-x-4">
+                <div className={`w-3 h-3 rounded-full ${
+                  backup.status === 'success' ? 'bg-green-500' :
+                  backup.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500'
+                }`}></div>
+                <div>
+                  <div className="text-sm font-medium">{backup.date}</div>
+                  <div className="text-xs text-gray-500">{backup.size} · {backup.type === 'auto' ? '자동' : '수동'}</div>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="secondary" size="sm">
+                  📥 다운로드
+                </Button>
+                <Button variant="secondary" size="sm">
+                  🔄 복원
+                </Button>
+                <Button variant="secondary" size="sm" className="text-red-600">
+                  🗑️ 삭제
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -412,17 +849,21 @@ const SuperAdminDashboard: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex space-x-4 overflow-x-auto">
           {[
             { id: 'dashboard', label: '대시보드', icon: '📊' },
             { id: 'users', label: '사용자', icon: '👥' },
             { id: 'projects', label: '프로젝트', icon: '📋' },
-            { id: 'system', label: '시스템', icon: '⚙️' }
+            { id: 'monitoring', label: '모니터링', icon: '⚡' },
+            { id: 'database', label: 'DB 관리', icon: '🗄️' },
+            { id: 'audit', label: '감사 로그', icon: '📝' },
+            { id: 'settings', label: '설정', icon: '⚙️' },
+            { id: 'backup', label: '백업', icon: '💾' }
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-3 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -439,6 +880,11 @@ const SuperAdminDashboard: React.FC = () => {
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'users' && renderUsers()}
         {activeTab === 'projects' && renderProjects()}
+        {activeTab === 'monitoring' && renderMonitoring()}
+        {activeTab === 'database' && renderDatabase()}
+        {activeTab === 'audit' && renderAudit()}
+        {activeTab === 'settings' && renderSettings()}
+        {activeTab === 'backup' && renderBackup()}
         {activeTab === 'system' && renderSystem()}
       </div>
     </div>
