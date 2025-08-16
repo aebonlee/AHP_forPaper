@@ -2,13 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Layout from './components/layout/Layout';
 import LoginForm from './components/auth/LoginForm';
 import Card from './components/common/Card';
-import ModelBuilder from './components/model/ModelBuilder';
 import PairwiseComparison from './components/comparison/PairwiseComparison';
 import ResultsDashboard from './components/results/ResultsDashboard';
 import LandingPage from './components/admin/LandingPage';
 import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import PersonalServiceDashboard from './components/admin/PersonalServiceDashboard';
-import ProjectCreation from './components/admin/ProjectCreation';
 import ModelBuilding from './components/admin/ModelBuilding';
 import EvaluationResults from './components/admin/EvaluationResults';
 import ProjectCompletion from './components/admin/ProjectCompletion';
@@ -47,7 +45,7 @@ function App() {
   const [selectedEvaluationMethod, setSelectedEvaluationMethod] = useState<'pairwise' | 'direct'>('pairwise');
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [backendStatus, setBackendStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
-  const [projectCreationLoading, setProjectCreationLoading] = useState(false);
+  // const [projectCreationLoading, setProjectCreationLoading] = useState(false);
 
   useEffect(() => {
     // PostgreSQL 데이터베이스 연동 모드 활성화
@@ -433,71 +431,71 @@ function App() {
     setActiveTab('personal-projects');
   };
 
-  const createProject = async (projectData: { title: string; description: string; objective: string }) => {
-    setProjectCreationLoading(true);
-    
-    try {
-      if (isDemoMode) {
-        // 데모 모드에서는 로컬 상태에 새 프로젝트 추가
-        const newProject = {
-          id: Date.now().toString(),
-          title: projectData.title,
-          description: projectData.description,
-          objective: projectData.objective,
-          status: 'draft',
-          created_at: new Date().toISOString(),
-          evaluator_count: 0
-        };
-        
-        setProjects(prev => [...prev, newProject]);
-        setSelectedProjectId(newProject.id);
-        setSelectedProjectTitle(newProject.title);
-        
-        // 시뮬레이션 딜레이
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        return newProject;
-      } else {
-        // 실제 API 호출
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('로그인이 필요합니다.');
+  // const createProject = async (projectData: { title: string; description: string; objective: string }) => {
+  //   setProjectCreationLoading(true);
+  //   
+  //   try {
+  //     if (isDemoMode) {
+  //       // 데모 모드에서는 로컬 상태에 새 프로젝트 추가
+  //       const newProject = {
+  //         id: Date.now().toString(),
+  //         title: projectData.title,
+  //         description: projectData.description,
+  //         objective: projectData.objective,
+  //         status: 'draft',
+  //         created_at: new Date().toISOString(),
+  //         evaluator_count: 0
+  //       };
+  //       
+  //       setProjects(prev => [...prev, newProject]);
+  //       setSelectedProjectId(newProject.id);
+  //       setSelectedProjectTitle(newProject.title);
+  //       
+  //       // 시뮬레이션 딜레이
+  //       await new Promise(resolve => setTimeout(resolve, 1000));
+  //       
+  //       return newProject;
+  //     } else {
+  //       // 실제 API 호출
+  //       const token = localStorage.getItem('token');
+  //       if (!token) throw new Error('로그인이 필요합니다.');
+  //
+  //       const response = await fetch(`${API_BASE_URL}/api/projects`, {
+  //         method: 'POST',
+  //         headers: {
+  //           'Authorization': `Bearer ${token}`,
+  //           'Content-Type': 'application/json',
+  //         },
+  //         body: JSON.stringify(projectData),
+  //       });
+  //
+  //       if (!response.ok) {
+  //         const error = await response.json();
+  //         throw new Error(error.message || '프로젝트 생성에 실패했습니다.');
+  //       }
+  //
+  //       const result = await response.json();
+  //       const newProject = result.project;
+  //       
+  //       setSelectedProjectId(newProject.id);
+  //       setSelectedProjectTitle(newProject.title);
+  //       
+  //       // 프로젝트 목록 새로고침
+  //       await fetchProjects();
+  //       
+  //       return newProject;
+  //     }
+  //   } catch (error) {
+  //     console.error('프로젝트 생성 실패:', error);
+  //     throw error;
+  //   } finally {
+  //     setProjectCreationLoading(false);
+  //   }
+  // };
 
-        const response = await fetch(`${API_BASE_URL}/api/projects`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(projectData),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || '프로젝트 생성에 실패했습니다.');
-        }
-
-        const result = await response.json();
-        const newProject = result.project;
-        
-        setSelectedProjectId(newProject.id);
-        setSelectedProjectTitle(newProject.title);
-        
-        // 프로젝트 목록 새로고침
-        await fetchProjects();
-        
-        return newProject;
-      }
-    } catch (error) {
-      console.error('프로젝트 생성 실패:', error);
-      throw error;
-    } finally {
-      setProjectCreationLoading(false);
-    }
-  };
-
-  const handleProjectCreated = () => {
-    setActiveTab('model-building');
-  };
+  // const handleProjectCreated = () => {
+  //   setActiveTab('model-building');
+  // };
 
   const handleModelFinalized = () => {
     setActiveTab('evaluation-results');
