@@ -31,7 +31,7 @@ export const DEMO_PROJECTS = [
   }
 ];
 
-// 상위 기준 (Level 1)
+// 상위 기준 (Level 1) - 실제 평가 결과 반영
 export const DEMO_CRITERIA = [
   {
     id: 'criteria-1',
@@ -41,7 +41,7 @@ export const DEMO_CRITERIA = [
     parent_id: null,
     level: 1,
     order_index: 1,
-    weight: 0.40386
+    weight: 0.40386 // 40.386% - 최고 중요도
   },
   {
     id: 'criteria-2',
