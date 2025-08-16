@@ -430,7 +430,7 @@ function App() {
 
   // New admin workflow handlers
   const handleGetStarted = () => {
-    setActiveTab('projects');
+    setActiveTab('personal-projects');
   };
 
   const createProject = async (projectData: { title: string; description: string; objective: string }) => {
@@ -509,7 +509,7 @@ function App() {
 
   const handleProjectStatusChange = (status: 'terminated' | 'completed') => {
     console.log(`Project ${selectedProjectId} status changed to: ${status}`);
-    setActiveTab('projects');
+    setActiveTab('personal-projects');
     setSelectedProjectId(null);
     setSelectedProjectTitle('');
   };
@@ -539,7 +539,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (user && activeTab === 'projects') {
+    if (user && activeTab === 'personal-projects') {
       if (isDemoMode) {
         // 데모 모드에서는 DEMO_PROJECTS 강제 설정
         console.log('🔧 프로젝트 탭 활성화 - 데모 데이터 강제 설정');
@@ -547,7 +547,7 @@ function App() {
       } else {
         fetchProjects();
       }
-    } else if (user && activeTab === 'users' && user.role === 'admin') {
+    } else if (user && activeTab === 'personal-users' && user.role === 'admin') {
       fetchUsers();
     }
   }, [user, activeTab, isDemoMode, fetchProjects, fetchUsers]);
@@ -699,7 +699,21 @@ function App() {
         return renderAdminTypeSelection();
 
       case 'super-admin':
-        return <SuperAdminDashboard />;
+      case 'dashboard':
+      case 'users':
+      case 'projects':
+      case 'monitoring':
+      case 'database':
+      case 'audit':
+      case 'settings':
+      case 'backup':
+      case 'system':
+        return (
+          <SuperAdminDashboard 
+            activeTab={activeTab === 'super-admin' ? 'dashboard' : activeTab}
+            onTabChange={setActiveTab}
+          />
+        );
 
       case 'personal-service':
         return <PersonalServiceDashboard user={user} />;
@@ -716,7 +730,7 @@ function App() {
         return (
           <ProjectCreation
             onProjectCreated={handleProjectCreated}
-            onCancel={() => setActiveTab('projects')}
+            onCancel={() => setActiveTab('personal-projects')}
             loading={projectCreationLoading}
             createProject={createProject}
           />
@@ -729,7 +743,7 @@ function App() {
               <div className="text-center py-8">
                 <p className="text-gray-500">프로젝트를 먼저 선택해주세요.</p>
                 <button
-                  onClick={() => setActiveTab('projects')}
+                  onClick={() => setActiveTab('personal-projects')}
                   className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   프로젝트 목록으로 이동
@@ -743,7 +757,7 @@ function App() {
             projectId={selectedProjectId}
             projectTitle={selectedProjectTitle}
             onModelFinalized={handleModelFinalized}
-            onBack={() => setActiveTab('projects')}
+            onBack={() => setActiveTab('personal-projects')}
           />
         );
 
@@ -754,7 +768,7 @@ function App() {
               <div className="text-center py-8">
                 <p className="text-gray-500">프로젝트를 먼저 선택해주세요.</p>
                 <button
-                  onClick={() => setActiveTab('projects')}
+                  onClick={() => setActiveTab('personal-projects')}
                   className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   프로젝트 목록으로 이동
@@ -779,7 +793,7 @@ function App() {
               <div className="text-center py-8">
                 <p className="text-gray-500">프로젝트를 먼저 선택해주세요.</p>
                 <button
-                  onClick={() => setActiveTab('projects')}
+                  onClick={() => setActiveTab('personal-projects')}
                   className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   프로젝트 목록으로 이동
@@ -797,7 +811,7 @@ function App() {
           />
         );
 
-      case 'projects':
+      case 'personal-projects':
         console.log('🔍 프로젝트 관리 렌더링 - 현재 프로젝트:', projects);
         console.log('📊 데모 모드:', isDemoMode, '프로젝트 수:', projects.length);
         return (
@@ -864,7 +878,7 @@ function App() {
           </Card>
         );
         
-      case 'users':
+      case 'personal-users':
         return user.role !== 'admin' ? (
           <Card title="접근 권한 없음">
             <div className="text-center py-8">
@@ -890,7 +904,7 @@ function App() {
               <div className="text-center py-8">
                 <p className="text-gray-500">프로젝트를 선택해주세요.</p>
                 <button
-                  onClick={() => setActiveTab('projects')}
+                  onClick={() => setActiveTab('personal-projects')}
                   className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   프로젝트 목록으로 이동
@@ -908,7 +922,7 @@ function App() {
               <div className="text-center py-8">
                 <p className="text-gray-500">프로젝트를 선택해주세요.</p>
                 <button
-                  onClick={() => setActiveTab('projects')}
+                  onClick={() => setActiveTab('personal-projects')}
                   className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   프로젝트 목록으로 이동
@@ -983,7 +997,7 @@ function App() {
           />
         );
 
-      case 'dashboard':
+      case 'evaluator-status':
         return (
           <Card title="평가자 대시보드">
             <div className="space-y-4">
@@ -1013,7 +1027,7 @@ function App() {
               <div className="text-center py-8">
                 <p className="text-gray-500">프로젝트를 선택해주세요.</p>
                 <button
-                  onClick={() => setActiveTab('projects')}
+                  onClick={() => setActiveTab('personal-projects')}
                   className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   프로젝트 목록으로 이동

@@ -10,15 +10,15 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, userRole, adminType, activeTab, onTabChange }) => {
   const superAdminMenuItems = [
-    { id: 'super-admin', label: '시스템 대시보드', icon: '📊' },
+    { id: 'dashboard', label: '시스템 대시보드', icon: '📊' },
     { id: 'users', label: '사용자 관리', icon: '👥' },
     { id: 'projects', label: '전체 프로젝트', icon: '📋' },
-    { id: 'system-monitor', label: '시스템 모니터링', icon: '⚡' },
-    { id: 'database-management', label: 'DB 관리', icon: '🗄️' },
-    { id: 'audit-logs', label: '감사 로그', icon: '📝' },
-    { id: 'system-settings', label: '시스템 설정', icon: '⚙️' },
-    { id: 'backup-restore', label: '백업/복원', icon: '💾' },
-    { id: 'admin-type-selection', label: '모드 전환', icon: '🔄' }
+    { id: 'monitoring', label: '시스템 모니터링', icon: '⚡' },
+    { id: 'database', label: 'DB 관리', icon: '🗄️' },
+    { id: 'audit', label: '감사 로그', icon: '📝' },
+    { id: 'settings', label: '시스템 설정', icon: '⚙️' },
+    { id: 'backup', label: '백업/복원', icon: '💾' },
+    { id: 'system', label: '시스템 정보', icon: '🖥️' }
   ];
 
   const personalServiceMenuItems = [

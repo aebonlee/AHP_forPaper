@@ -57,7 +57,15 @@ interface AuditLog {
   status: string;
 }
 
-const SuperAdminDashboard: React.FC = () => {
+interface SuperAdminDashboardProps {
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+}
+
+const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({ 
+  activeTab: externalActiveTab, 
+  onTabChange: externalOnTabChange 
+}) => {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [stats, setStats] = useState<SystemStats>({
@@ -123,7 +131,22 @@ const SuperAdminDashboard: React.FC = () => {
     backupFrequency: 'weekly',
     backupTime: '02:00'
   });
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(externalActiveTab || 'dashboard');
+
+  // 외부에서 activeTab이 변경되면 내부 상태도 업데이트
+  useEffect(() => {
+    if (externalActiveTab) {
+      setActiveTab(externalActiveTab);
+    }
+  }, [externalActiveTab]);
+
+  // 내부에서 탭이 변경되면 외부로 전달
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    if (externalOnTabChange) {
+      externalOnTabChange(tab);
+    }
+  };
 
   useEffect(() => {
     loadSystemData();
@@ -1940,7 +1963,7 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => handleTabChange('dashboard')}
                   className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
                   title="대시보드로 돌아가기"
                 >
@@ -2232,7 +2255,7 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => handleTabChange('dashboard')}
                   className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
                 >
                   ←
@@ -2474,7 +2497,7 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => handleTabChange('dashboard')}
                   className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
                 >
                   ←
@@ -2742,7 +2765,7 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => handleTabChange('dashboard')}
                   className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
                 >
                   ←
@@ -2779,7 +2802,7 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => handleTabChange('dashboard')}
                   className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
                 >
                   ←
@@ -2816,7 +2839,7 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => handleTabChange('dashboard')}
                   className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
                 >
                   ←
@@ -2853,7 +2876,7 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => handleTabChange('dashboard')}
                   className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
                 >
                   ←
@@ -2890,7 +2913,7 @@ const SuperAdminDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <button 
-                  onClick={() => setActiveTab('dashboard')}
+                  onClick={() => handleTabChange('dashboard')}
                   className="mr-4 text-gray-500 hover:text-gray-700 transition-colors text-2xl"
                 >
                   ←
@@ -2965,7 +2988,7 @@ const SuperAdminDashboard: React.FC = () => {
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
+                onClick={() => handleTabChange(item.id as any)}
                 className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
                   activeTab === item.id
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -2989,7 +3012,7 @@ const SuperAdminDashboard: React.FC = () => {
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id as any)}
+                onClick={() => handleTabChange(item.id as any)}
                 className={`p-4 rounded-lg border-2 transition-all duration-200 text-center ${
                   activeTab === item.id
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
