@@ -1,12 +1,12 @@
 {
   "files": {
-    "main.css": "/ahp-research-platform/static/css/main.340df299.css",
-    "main.js": "/ahp-research-platform/static/js/main.55c1494e.js",
+    "main.css": "/ahp-research-platform/static/css/main.3015ce4c.css",
+    "main.js": "/ahp-research-platform/static/js/main.f2ca11ef.js",
     "static/js/206.c8c95004.chunk.js": "/ahp-research-platform/static/js/206.c8c95004.chunk.js",
     "index.html": "/ahp-research-platform/index.html"
   },
   "entrypoints": [
-    "static/css/main.340df299.css",
-    "static/js/main.55c1494e.js"
+    "static/css/main.3015ce4c.css",
+    "static/js/main.f2ca11ef.js"
   ]
 }
